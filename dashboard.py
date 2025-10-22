@@ -11,8 +11,8 @@ import cv2
 # ==========================
 @st.cache_resource
 def load_models():
-    yolo_model = YOLO("model/best.pt")  # Model deteksi objek
-    classifier = tf.keras.models.load_model("model/classifier_model.h5")  # Model klasifikasi
+    yolo_model = YOLO("Ibnu Hawari Yuzan_Laporan 4.pt")  # Model deteksi objek
+    classifier = tf.keras.models.load_model("Ibnu Hawari Yuzan_Laporan 2.h5")  # Model klasifikasi
     return yolo_model, classifier
 
 yolo_model, classifier = load_models()
@@ -38,7 +38,7 @@ if uploaded_file is not None:
 
     elif menu == "Klasifikasi Gambar":
         # Preprocessing
-        img_resized = img.resize((224, 224))  # sesuaikan ukuran dengan model kamu
+        img_resized = img.resize((128, 128))  # sesuaikan ukuran dengan model kamu
         img_array = image.img_to_array(img_resized)
         img_array = np.expand_dims(img_array, axis=0)
         img_array = img_array / 255.0
