@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
+# CSS DARK FUTURISTIK + TOMBOL MUSIK MELAYANG
 # =========================
 st.markdown("""
 <style>
@@ -34,27 +34,9 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
-    /* Tambahkan ruang di bawah untuk tombol fixed */
     padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
-
-/* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
-/* Selector ini menargetkan tombol 'Kembali ke Halaman Awal' di sidebar pada Halaman Dashboard */
-[data-testid="stSidebar"] div.stButton button {
-    /* Gunakan selector yang lebih spesifik jika ada tombol lain */
-}
-
-/* Menggunakan CSS untuk memposisikan tombol native di paling bawah. 
-   Ini adalah trik CSS terbaik untuk Streamlit native components: */
-[data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
-    position: fixed;
-    bottom: 20px;
-    /* Sesuaikan lebar sidebar jika perlu (default 210px, dikurangi padding) */
-    width: 200px; 
-    left: 10px; 
-    z-index: 999;
-}
 
 h1, h2, h3 {
     text-align: center;
@@ -147,20 +129,48 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (TOMBOL KLIK KANAN BAWAH)
 # =========================
-
 music_path = os.path.join("music", "lostsagalobby.mp3")
 
+# Simpan status pemutaran musik
+if "music_playing" not in st.session_state:
+    st.session_state.music_playing = False
+
+# Cek apakah file musik tersedia
 if os.path.exists(music_path):
-    if "show_music" not in st.session_state:
-        st.session_state.show_music = True
+    # Tombol toggle di sidebar
+    toggle_music = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.music_playing)
+    if toggle_music != st.session_state.music_playing:
+        st.session_state.music_playing = toggle_music
+        st.rerun()
 
-    toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.show_music)
-    st.session_state.show_music = toggle
-
-    if st.session_state.show_music:
+    # Jika aktif, tampilkan player audio
+    if st.session_state.music_playing:
         st.audio(music_path, format="audio/mp3", start_time=0)
+
+    # Tombol melayang kanan bawah (ikon berubah sesuai status)
+    music_icon = "🔊" if st.session_state.music_playing else "🎵"
+    music_button_html = f"""
+    <form action="" method="get">
+        <button name="toggle_music" class="music-button {'rotating' if st.session_state.music_playing else ''}"
+                type="submit" formaction="?music={'off' if st.session_state.music_playing else 'on'}">
+            {music_icon}
+        </button>
+    </form>
+    """
+    st.markdown(music_button_html, unsafe_allow_html=True)
+
+    # Tangkap query untuk toggle dari tombol melayang
+    query_params = st.query_params
+    if "music" in query_params:
+        if query_params["music"] == "on":
+            st.session_state.music_playing = True
+        elif query_params["music"] == "off":
+            st.session_state.music_playing = False
+        st.experimental_set_query_params()  # hapus parameter agar bersih
+        st.rerun()
+
 else:
-    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `my_music.mp3` ada di folder `/music`.")
+    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `lostsagalobby.mp3` ada di folder `/music`.")
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -206,8 +216,6 @@ elif st.session_state.page == "dashboard":
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    
-    # Placeholder untuk memisahkan tombol 'Mode AI' dan tombol 'Kembali'
     st.sidebar.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
 
@@ -234,7 +242,6 @@ elif st.session_state.page == "dashboard":
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
             time.sleep(1.5)
 
-        # ... (Logika Deteksi, Klasifikasi, Insight)
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
@@ -271,15 +278,15 @@ elif st.session_state.page == "dashboard":
                 <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
+
     elif uploaded_file and (yolo_model is None or classifier is None):
         st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
-        
+
     # =========================
-    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
+    # TOMBOL KEMBALI
     # =========================
-    # Tombol Streamlit native, diposisikan oleh CSS di paling bawah
     if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
