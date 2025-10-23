@@ -142,8 +142,8 @@ if "page" not in st.session_state:
 # SISTEM MUSIK (MENGGUNAKAN FOLDER 'music' DENGAN PLAYLIST JS)
 # =======================================================
 MUSIC_FOLDER = "music" 
-# os.makedirs(MUSIC_FOLDER, exist_ok=True) # Baris ini tidak perlu untuk deployment
 
+# Daftar lagu yang ingin Anda masukkan ke playlist
 TRACKS_RAW = [
     os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
     os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
@@ -152,13 +152,13 @@ TRACKS_RAW = [
 # Hanya ambil trek yang benar-benar ada
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
-# Mempersiapkan playlist untuk JavaScript. Kami akan menggunakan path relatif untuk keandalan:
-# Path yang paling andal di Streamlit Cloud adalah path yang disajikan oleh web server
+# Mempersiapkan playlist untuk JavaScript. Path yang paling sering berhasil adalah absolute path (dimulai dengan /)
+# Contoh: '/music/wildwest.mp3'
 playlist_for_js = ["/" + p for p in existing_tracks] 
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`.")
+    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Diperlukan `wildwest.mp3` dan `lostsagalobby.mp3`.")
 else:
     # Menggunakan st.markdown untuk menginject HTML/JS custom
     st.markdown(
