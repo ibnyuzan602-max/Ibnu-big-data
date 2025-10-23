@@ -131,72 +131,23 @@ if "page" not in st.session_state:
 # SISTEM MUSIK
 # =========================
 music_path = os.path.join("music", "lostsagalobby.mp3")
-if "music_playing" not in st.session_state:
-    st.session_state.music_playing = False
-if "music_visible" not in st.session_state:
-    st.session_state.music_visible = True  # baru: kontrol tampilan, bukan playback
 
 if os.path.exists(music_path):
-    # Tombol di sidebar hanya untuk sembunyikan / tampilkan, tidak memengaruhi musik
-    toggle_music = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Player Musik", value=st.session_state.music_visible)
-    if toggle_music != st.session_state.music_visible:
-        st.session_state.music_visible = toggle_music
-        st.rerun()
-
-    # Encode musik ke base64 agar bisa dikontrol lewat JS
     with open(music_path, "rb") as f:
         audio_data = f.read()
         audio_b64 = base64.b64encode(audio_data).decode()
 
-    # HTML player tersembunyi (autoplay manual)
-    music_html = f"""
-    <audio id="bgMusic" loop>
+    audio_html = f"""
+    <audio controls loop style="width:100%">
         <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        Browser Anda tidak mendukung audio.
     </audio>
-    <script>
-    const music = document.getElementById('bgMusic');
-    let playing = {'true' if st.session_state.music_playing else 'false'};
-    if (playing) {{
-        music.play();
-    }}
-    </script>
     """
-    st.markdown(music_html, unsafe_allow_html=True)
 
-    # Jika player ditampilkan
-    if st.session_state.music_visible:
-        st.sidebar.markdown("#### 🎵 Kontrol Musik")
-        if st.sidebar.button("▶️ Mainkan Musik", use_container_width=True):
-            st.session_state.music_playing = True
-            st.rerun()
-        if st.sidebar.button("⏸️ Hentikan Musik", use_container_width=True):
-            st.session_state.music_playing = False
-            st.rerun()
-
-    # Tombol melayang kanan bawah untuk toggle play/pause
-    music_icon = "🔊" if st.session_state.music_playing else "🎵"
-    button_html = f"""
-    <form action="" method="get">
-        <button name="toggle_music" class="music-button {'rotating' if st.session_state.music_playing else ''}"
-                type="submit" formaction="?music={'off' if st.session_state.music_playing else 'on'}">
-            {music_icon}
-        </button>
-    </form>
-    """
-    st.markdown(button_html, unsafe_allow_html=True)
-
-    # Query dari tombol melayang
-    query = st.query_params
-    if "music" in query:
-        if query["music"] == "on":
-            st.session_state.music_playing = True
-        elif query["music"] == "off":
-            st.session_state.music_playing = False
-        st.experimental_set_query_params()
-        st.rerun()
-
+    st.sidebar.markdown("#### 🎧 Player Musik")
+    st.sidebar.markdown(audio_html, unsafe_allow_html=True)
 else:
-    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `lostsagalobby.mp3` ada di folder `/music`.")
+    st.sidebar.warning("⚠️ File musik tidak ditemukan di folder 'music/'.")
 
 # =========================
 # HALAMAN 1: WELCOME
