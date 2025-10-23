@@ -236,7 +236,7 @@ else:
         
         // CATATAN: TIDAK ADA audio.play() DI INISIASI
         // Ini memastikan musik tidak akan dimulai kecuali diklik oleh pengguna.
-    }})();
+
     </script>
     """
     st.markdown(js_code, unsafe_allow_html=True)
