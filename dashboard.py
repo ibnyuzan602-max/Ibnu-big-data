@@ -140,10 +140,10 @@ LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-# =========================
-# SISTEM MUSIK (FIXED PATH DI JAVASCRIPT)
-# =========================
-MUSIC_FOLDER = "music" 
+# =======================================================
+# SISTEM MUSIK (PERCOBAAN PATH ALTERNATIF YANG LEBIH RELATIF)
+# =======================================================
+MUSIC_FOLDER = "music" # PASTIKAN NAMA FOLDER DI DISK ANDA JUGA 'music'
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS_RAW = [
@@ -153,12 +153,15 @@ TRACKS_RAW = [
 
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
+# Mempersiapkan playlist untuk JavaScript. Di sini kita hapus nama folder
+# karena Streamlit kadang meletakkan file di root URL saat deployment.
+# Contoh: 'music/wildwest.mp3' diubah menjadi 'wildwest.mp3' di JS
+playlist_for_js = [os.path.basename(p) for p in existing_tracks]
+playlist_js = json.dumps(playlist_for_js) 
+
 if len(existing_tracks) == 0:
     st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
 else:
-    # Menggunakan path mentah (e.g. 'musik/file.mp3') dari Python
-    playlist_js = json.dumps(existing_tracks) 
-    
     st.markdown(
         f"""
         <audio id="bgAudio" style="display:none;"></audio> 
@@ -167,7 +170,7 @@ else:
         </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js};
+            const playlist = {playlist_js}; // Sekarang hanya berisi nama file (e.g., ["wildwest.mp3", ...])
             let index = 0;
             let isPlaying = false;
             const btn = document.getElementById("musicButton");
@@ -190,13 +193,9 @@ else:
             }}
 
             function playTrack(i) {{
-                let path = playlist[i];
-                
-                // FIX PATH: Pastikan path dimulai dengan '/'. Ini adalah cara paling andal
-                // agar browser menemukan file di Streamlit Cloud (e.g., /musik/wildwest.mp3).
-                if (!path.startsWith('/')) {{
-                    path = '/' + path; 
-                }}
+                let filename = playlist[i];
+                // Coba path yang PALING RELATIF. Browser akan mencarinya di root Streamlit.
+                let path = filename; 
                 
                 audio.src = path;
                 
@@ -204,7 +203,7 @@ else:
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // Pesan DEBUG untuk membantu Anda memeriksa Console Browser (F12)
+                    // DEBUG: HARUS DICEK DI CONSOLE BROWSER (F12)
                     console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
@@ -214,15 +213,9 @@ else:
             // Hanya coba play saat diklik (kebijakan browser)
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
-                    // Set src dan coba mainkan track saat ini
-                    audio.src = playlist[index];
-                    
-                    // PERBAIKAN: Terapkan path fix lagi sebelum play
-                    let path = playlist[index];
-                    if (!path.startsWith('/')) {{
-                        path = '/' + path; 
-                    }}
-                    audio.src = path;
+                    // Set src ke nama file saja (misal: "wildwest.mp3")
+                    let filename = playlist[index];
+                    audio.src = filename;
                     
                     audio.play().then(() => {{
                         isPlaying = true;
