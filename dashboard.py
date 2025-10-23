@@ -23,7 +23,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK & TOMBOL BAWAH FIXED
+# CSS
 # =========================
 st.markdown("""
 <style>
@@ -35,10 +35,9 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
-    padding-bottom: 80px; 
+    padding-bottom: 80px;
 }
 [data-testid="stSidebar"] * { color: white !important; }
-
 [data-testid="stSidebar"] button[kind="secondaryFormSubmit"] {
     position: fixed;
     bottom: 20px;
@@ -46,7 +45,6 @@ st.markdown("""
     left: 10px;
     z-index: 999;
 }
-
 h1, h2, h3 {
     text-align: center;
     font-family: 'Poppins', sans-serif;
@@ -91,7 +89,7 @@ def load_lottie_url(url):
     return None
 
 # =========================
-# ANIMASI LOTTIE
+# ANIMASI
 # =========================
 LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
 LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
@@ -102,51 +100,45 @@ LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
+if "music_initialized" not in st.session_state:
+    st.session_state.music_initialized = False
 
 # =========================
-# SISTEM MUSIK (RANDOM START VERSION)
+# SISTEM MUSIK (dipanggil saat user klik tombol “Masuk”)
 # =========================
-MUSIC_FOLDER = "musik"
-os.makedirs(MUSIC_FOLDER, exist_ok=True)
+def init_music_player():
+    MUSIC_FOLDER = "musik"
+    os.makedirs(MUSIC_FOLDER, exist_ok=True)
+    TRACKS = [
+        os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
+        os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
+    ]
+    existing_tracks = [p for p in TRACKS if os.path.exists(p)]
+    if not existing_tracks:
+        st.sidebar.warning("⚠️ File musik tidak ditemukan di folder 'musik'.")
+        return
 
-TRACKS = [
-    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
-    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
-]
-
-existing_tracks = [p for p in TRACKS if os.path.exists(p)]
-
-if len(existing_tracks) > 0:
-    st.sidebar.markdown("---")
-    st.sidebar.header("🎵 Musik Latar")
-
-    # Simpan status musik
-    if "show_audio_controls" not in st.session_state:
-        st.session_state.show_audio_controls = True
-    if "music_playing" not in st.session_state:
-        st.session_state.music_playing = True
     if "audio_volume" not in st.session_state:
         st.session_state.audio_volume = 0.6
-    if "random_start" not in st.session_state:
-        st.session_state.random_start = random.randint(0, len(existing_tracks) - 1)
+    if "music_playing" not in st.session_state:
+        st.session_state.music_playing = True
+    if "show_audio_controls" not in st.session_state:
+        st.session_state.show_audio_controls = True
+
+    vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
+    st.session_state.audio_volume = vol
 
     show_ctrl = st.sidebar.checkbox("Tampilkan Kontrol Musik", value=st.session_state.show_audio_controls)
     st.session_state.show_audio_controls = show_ctrl
 
-    # Tombol Play / Pause
-    if st.sidebar.button("⏯️ Play / Pause Musik", key="music_pause_btn"):
+    if st.sidebar.button("⏯️ Play / Pause Musik"):
         st.session_state.music_playing = not st.session_state.music_playing
 
-    # Volume
-    vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
-    st.session_state.audio_volume = vol
-
-    # Playlist dan pengaturan awal
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
     play_state = "true" if st.session_state.music_playing else "false"
-    start_index = st.session_state.random_start
+    start_index = random.randint(0, len(existing_tracks) - 1)
 
     audio_html = f"""
     <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
@@ -159,21 +151,15 @@ if len(existing_tracks) > 0:
     let index = {start_index};
     const audio = document.getElementById("bgAudio");
     audio.volume = {vol};
-
     function playTrack(i) {{
         audio.src = playlist[i];
-        audio.play().catch(e => console.warn("Autoplay mungkin diblokir:", e));
+        audio.play().catch(e => console.warn("Autoplay mungkin diblokir sampai user klik:", e));
     }}
-
-    // Main lagu acak pertama
     playTrack(index);
-
-    // Kalau musik selesai, lanjut ke lagu berikutnya
     audio.addEventListener("ended", () => {{
         index = (index + 1) % playlist.length;
         playTrack(index);
     }});
-
     if ({play_state} === false) {{
         audio.pause();
     }}
@@ -182,12 +168,11 @@ if len(existing_tracks) > 0:
     st.components.v1.html(audio_html, height=0, scrolling=False)
 
 # =========================
-# HALAMAN 1: WELCOME PAGE
+# HALAMAN 1: HOME
 # =========================
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
-
     lottie = load_lottie_url(LOTTIE_WELCOME)
     if lottie:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
@@ -198,6 +183,7 @@ if st.session_state.page == "home":
     with col2:
         if st.button("🚀 Masuk ke Website", use_container_width=True):
             st.session_state.page = "dashboard"
+            st.session_state.music_initialized = True  # inisialisasi musik setelah klik
             with st.spinner("🔄 Memuat halaman..."):
                 trans_anim = load_lottie_url(LOTTIE_TRANSITION)
                 if trans_anim:
@@ -206,11 +192,14 @@ if st.session_state.page == "home":
             st.rerun()
 
 # =========================
-# HALAMAN 2: DASHBOARD AI
+# HALAMAN 2: DASHBOARD
 # =========================
 elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
     st.markdown("### Sistem Deteksi dan Klasifikasi Gambar Cerdas")
+
+    if st.session_state.music_initialized:
+        init_music_player()
 
     lottie_ai = load_lottie_url(LOTTIE_DASHBOARD)
     if lottie_ai:
@@ -218,13 +207,13 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Mode AI
+    # MODE
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
 
-    # Load model
+    # LOAD MODEL
     @st.cache_resource
     def load_models():
         try:
@@ -244,34 +233,20 @@ elif st.session_state.page == "dashboard":
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
             time.sleep(1.5)
-
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
             results = yolo_model.predict(source=img_cv2)
             result_img = results[0].plot()
             st.image(result_img, caption="🎯 Hasil Deteksi", use_container_width=True)
-
-            img_bytes = io.BytesIO()
-            Image.fromarray(result_img).save(img_bytes, format="PNG")
-            img_bytes.seek(0)
-            st.download_button(
-                label="📥 Download Hasil Deteksi",
-                data=img_bytes,
-                file_name="hasil_deteksi_yolo.png",
-                mime="image/png"
-            )
-
         elif mode == "Klasifikasi Gambar":
             st.info("🧠 Menjalankan klasifikasi gambar...")
             img_resized = img.resize((128, 128))
             img_array = image.img_to_array(img_resized)
             img_array = np.expand_dims(img_array, axis=0) / 255.0
-
             prediction = classifier.predict(img_array)
             class_index = np.argmax(prediction)
             confidence = np.max(prediction)
-
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
@@ -279,7 +254,6 @@ elif st.session_state.page == "dashboard":
                 <p><b>Akurasi:</b> {confidence:.2%}</p>
             </div>
             """, unsafe_allow_html=True)
-
         elif mode == "AI Insight":
             st.info("🔍 Mode Insight Aktif")
             st.markdown("""
@@ -289,12 +263,10 @@ elif st.session_state.page == "dashboard":
                 <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
-    elif uploaded_file and (yolo_model is None or classifier is None):
-        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
 
-    # Tombol kembali ke halaman awal (posisi fixed di sidebar)
+    # Tombol kembali
     if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
