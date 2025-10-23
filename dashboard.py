@@ -72,7 +72,7 @@ if "page" not in st.session_state:
 # FLOATING MUSIC BUTTON 🎵
 # ================
 def floating_music_button():
-    MUSIC_FOLDER = "musik"
+    MUSIC_FOLDER = "music"
     os.makedirs(MUSIC_FOLDER, exist_ok=True)
     TRACKS = [
         os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
@@ -80,7 +80,7 @@ def floating_music_button():
     ]
     existing_tracks = [p for p in TRACKS if os.path.exists(p)]
     if not existing_tracks:
-        st.warning("🎵 File musik belum ditemukan di folder 'musik/'.")
+        st.warning("🎵 File musik belum ditemukan di folder 'music/'.")
         return
     
     playlist_js = json.dumps(existing_tracks)
