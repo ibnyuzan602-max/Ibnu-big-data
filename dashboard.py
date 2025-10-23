@@ -42,11 +42,9 @@ st.markdown("""
 [data-testid="stSidebar"] * { color: white !important; }
 
 /* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
-/* Selector menargetkan container tombol Streamlit dan memposisikannya fixed */
 [data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
     position: fixed;
     bottom: 20px;
-    /* Sesuaikan lebar sidebar jika perlu (default 210px, dikurangi padding) */
     width: 200px; 
     left: 10px; 
     z-index: 999;
@@ -141,9 +139,9 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (PERCOBAAN PATH ALTERNATIF YANG LEBIH RELATIF)
+# SISTEM MUSIK (PERCOBAAN PATH ABSOLUT DARI ROOT)
 # =======================================================
-MUSIC_FOLDER = "music" # PASTIKAN NAMA FOLDER DI DISK ANDA JUGA 'music'
+MUSIC_FOLDER = "musik" # Menggunakan 'musik' untuk konsistensi dengan path absolut
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS_RAW = [
@@ -153,14 +151,13 @@ TRACKS_RAW = [
 
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
-# Mempersiapkan playlist untuk JavaScript. Di sini kita hapus nama folder
-# karena Streamlit kadang meletakkan file di root URL saat deployment.
-# Contoh: 'music/wildwest.mp3' diubah menjadi 'wildwest.mp3' di JS
-playlist_for_js = [os.path.basename(p) for p in existing_tracks]
+# Mempersiapkan playlist untuk JavaScript. Di sini kita membuat path absolut.
+# Contoh: '/musik/wildwest.mp3'
+playlist_for_js = ["/" + p for p in existing_tracks] # Tambahkan '/' di awal
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`.")
 else:
     st.markdown(
         f"""
@@ -170,7 +167,8 @@ else:
         </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js}; // Sekarang hanya berisi nama file (e.g., ["wildwest.mp3", ...])
+            // playlist = ["/musik/wildwest.mp3", "/musik/lostsagalobby.mp3"]
+            const playlist = {playlist_js}; 
             let index = 0;
             let isPlaying = false;
             const btn = document.getElementById("musicButton");
@@ -193,10 +191,7 @@ else:
             }}
 
             function playTrack(i) {{
-                let filename = playlist[i];
-                // Coba path yang PALING RELATIF. Browser akan mencarinya di root Streamlit.
-                let path = filename; 
-                
+                let path = playlist[i]; 
                 audio.src = path;
                 
                 audio.play().then(() => {{
@@ -213,9 +208,8 @@ else:
             // Hanya coba play saat diklik (kebijakan browser)
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
-                    // Set src ke nama file saja (misal: "wildwest.mp3")
-                    let filename = playlist[index];
-                    audio.src = filename;
+                    // Coba putar track saat ini
+                    audio.src = playlist[index];
                     
                     audio.play().then(() => {{
                         isPlaying = true;
