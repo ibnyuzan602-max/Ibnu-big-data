@@ -126,7 +126,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
+# SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI FIX)
 # =========================
 MUSIC_FOLDER = "music"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -167,7 +167,7 @@ else:
                 }});
             }}
 
-            btn.addEventListener("click", () => {{
+            btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
                     playTrack(index);
                 }} else {{
@@ -179,7 +179,7 @@ else:
                 }}
             }});
 
-            audio.addEventListener("ended", () => {{
+            audio.addEventListener("ended", function() {{
                 index = (index + 1) % playlist.length;
                 playTrack(index);
             }});
