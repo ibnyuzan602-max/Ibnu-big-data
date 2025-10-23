@@ -140,7 +140,7 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (PERBAIKAN PATH JAVASCRIPT)
 # =========================
-MUSIC_FOLDER = "musik" 
+MUSIC_FOLDER = "music" 
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS_RAW = [
@@ -151,9 +151,9 @@ TRACKS_RAW = [
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`. Mohon cek penamaan folder dan file.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`. Mohon cek penamaan folder dan file.")
 else:
-    # Menggunakan path mentah yang diharapkan Streamlit Cloud (e.g. 'musik/file.mp3')
+    # Menggunakan path mentah yang diharapkan Streamlit Cloud (e.g. 'music/file.mp3')
     playlist_js = json.dumps(existing_tracks) 
     
     st.markdown(
@@ -192,7 +192,7 @@ else:
                 // PERBAIKAN UTAMA: Tambahkan tanda '/' di awal path 
                 // ini membantu browser menemukan file secara absolut dari root Streamlit
                 if (!path.startsWith('/')) {{
-                    // Asumsi path yang benar di Cloud/Local adalah /musik/file.mp3
+                    // Asumsi path yang benar di Cloud/Local adalah /music/file.mp3
                     path = '/' + path; 
                 }}
                 
