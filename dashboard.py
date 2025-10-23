@@ -140,7 +140,7 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (PERBAIKAN FUNGSI PLAY)
 # =========================
-MUSIC_FOLDER = "musik" # Pastikan nama folder Anda adalah 'musik'
+MUSIC_FOLDER = "music" # Pastikan nama folder Anda adalah 'musik'
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS = [
@@ -151,7 +151,7 @@ TRACKS = [
 existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
 else:
     # Mengonversi path file lokal Streamlit ke URL yang dapat diakses browser
     # Streamlit meng-host folder lokal, jadi kita hapus nama folder di awal path untuk akses
