@@ -107,13 +107,13 @@ TRACKS = [
 existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 
 if len(existing_tracks) > 0:
-    st.sidebar.markdown("## 🎵 Musik Latar")
+    st.sidebar.markdown("---")
+    st.sidebar.header("🎵 Musik Latar")
 
     if "show_audio_controls" not in st.session_state:
         st.session_state.show_audio_controls = True
     if "music_playing" not in st.session_state:
-        # Atur agar musik default-nya mencoba untuk play
-        st.session_state.music_playing = True 
+        st.session_state.music_playing = True
 
     show_ctrl = st.sidebar.checkbox("Tampilkan Kontrol Musik", value=st.session_state.show_audio_controls)
     st.session_state.show_audio_controls = show_ctrl
@@ -131,14 +131,15 @@ if len(existing_tracks) > 0:
     # Playlist ke JS
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
+    # Menambahkan 'autoplay' ke tag audio
+    autoplay_attr = "autoplay"
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
 
     play_state = "true" if st.session_state.music_playing else "false"
 
-    # PERUBAHAN UTAMA: Menambahkan 'autoplay' ke tag <audio>
     audio_html = f"""
     <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <audio id="bgAudio" {controls_attr} {style_attr} autoplay> 
+        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr}>
             Your browser does not support the audio element.
         </audio>
     </div>
@@ -147,22 +148,28 @@ if len(existing_tracks) > 0:
     let index = 0;
     const audio = document.getElementById("bgAudio");
     audio.volume = {vol};
+    
     function playTrack(i) {{
         audio.src = playlist[i];
-        // Coba play. Ini akan berfungsi jika browser mengizinkan autoplay atau setelah interaksi.
+        // Memanggil play() segera
         audio.play().catch(e => console.warn("Autoplay mungkin diblokir:", e));
     }}
-    playTrack(index);
+
+    // Panggil playTrack hanya jika musik diizinkan
+    if ({play_state} === true) {{
+        playTrack(index);
+    }}
+
     audio.addEventListener("ended", () => {{
         index = (index + 1) % playlist.length;
         playTrack(index);
     }});
     
-    // Sinkronisasi status Play/Pause dari Streamlit
+    // Sinkronisasi status Play/Pause dinamis
     if ({play_state} === false) {{
         audio.pause();
     }} else {{
-        // Coba play lagi jika play_state true (penting setelah user interaksi)
+        // Coba play lagi jika play_state true (penting setelah user interaksi/klik)
         audio.play().catch(e => console.warn("Autoplay diblokir:", e));
     }}
     </script>
@@ -200,16 +207,18 @@ elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
     st.markdown("### Sistem Deteksi dan Klasifikasi Gambar Cerdas")
 
+    # Tombol kembali DIPINDAHKAN KE SIDEBAR
+    st.sidebar.markdown("---")
+    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
+    st.sidebar.markdown("---")
+
     lottie_ai = load_lottie_url(LOTTIE_DASHBOARD)
     if lottie_ai:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
-
-    # Tombol kembali
-    if st.button("⬅️ Kembali ke Halaman Awal"):
-        st.session_state.page = "home"
-        st.rerun()
 
     # =========================
     # MODE ANALISIS
@@ -224,18 +233,17 @@ elif st.session_state.page == "dashboard":
     # =========================
     @st.cache_resource
     def load_models():
-        # Pastikan file model ada di folder 'model/'
-        yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
-        classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
-        return yolo_model, classifier
+        try:
+            # Pastikan path model benar
+            yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
+            classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
+            return yolo_model, classifier
+        except Exception as e:
+            st.error(f"⚠️ Gagal memuat model. Pastikan file model ada di folder 'model/'. Error: {e}")
+            return None, None
 
-    # Catatan: Fungsi load_models akan error jika file model tidak ditemukan
-    try:
-        yolo_model, classifier = load_models()
-    except Exception as e:
-        st.error(f"⚠️ Gagal memuat model AI. Pastikan file model ada di folder 'model/'. Error: {e}")
-        yolo_model, classifier = None, None
-        
+    yolo_model, classifier = load_models()
+
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file and yolo_model and classifier:
@@ -248,8 +256,7 @@ elif st.session_state.page == "dashboard":
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
-            # Menambahkan argumen conf=0.25 (default) dan iou=0.7 (default) untuk hasil yang lebih stabil
-            results = yolo_model.predict(source=img_cv2, conf=0.25, iou=0.7) 
+            results = yolo_model.predict(source=img_cv2)
             result_img = results[0].plot()
             st.image(result_img, caption="🎯 Hasil Deteksi", use_container_width=True)
 
@@ -273,15 +280,11 @@ elif st.session_state.page == "dashboard":
             prediction = classifier.predict(img_array)
             class_index = np.argmax(prediction)
             confidence = np.max(prediction)
-            
-            # Catatan: Anda mungkin ingin membuat list kelas yang sesuai (misalnya: ['Kucing', 'Anjing', ...])
-            # Karena model Anda tidak menyediakan nama kelas, kami menggunakan index
-            class_name = f"Index Kelas {class_index}" 
 
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
-                <p><b>Kelas:</b> {class_name}</p>
+                <p><b>Kelas:</b> Index Kelas {class_index}</p>
                 <p><b>Akurasi:</b> {confidence:.2%}</p>
             </div>
             """, unsafe_allow_html=True)
@@ -293,10 +296,10 @@ elif st.session_state.page == "dashboard":
             <div class="result-card">
                 <h3>💬 Insight Otomatis</h3>
                 <p>AI menganalisis pola visual, bentuk, dan warna utama.</p>
-                <p>Fitur ini masih dalam tahap pengembangan. Untuk saat ini, gunakan mode Deteksi Objek atau Klasifikasi.</p>
+                <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
-    elif uploaded_file:
-         st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa konsol untuk detail error.</div>", unsafe_allow_html=True)
+    elif uploaded_file and (yolo_model is None or classifier is None):
+        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa konsol dan path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
