@@ -128,66 +128,35 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
 # =========================
-MUSIC_FOLDER = "music"
-os.makedirs(MUSIC_FOLDER, exist_ok=True)
+MUSIC_PATHS = {
+    "Wild West": "musik/wildwest.mp3",
+    "Lost Saga Lobby": "musik/lostsagalobby.mp3"
+}
 
-TRACKS = [
-    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
-    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
-]
+os.makedirs("musik", exist_ok=True)
 
-existing_tracks = [p for p in TRACKS if os.path.exists(p)]
+selected_music = st.sidebar.selectbox("🎵 Pilih Musik:", list(MUSIC_PATHS.keys()))
+music_file = MUSIC_PATHS[selected_music]
 
-if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
-else:
-    playlist_js = json.dumps(existing_tracks)
-    st.markdown(
-        f"""
-        <div id="musicButton" class="music-button">🎵</div>
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js};
-            let index = 0;
-            let isPlaying = false;
-            const btn = document.getElementById("musicButton");
-            const audio = new Audio();
-            audio.volume = 0.6;
-            audio.loop = false;
+# =========================
+# KONTROL MUSIK
+# =========================
+st.sidebar.markdown("---")
+toggle = st.sidebar.button(
+    "🎶 Tampilkan / Sembunyikan Musik" if st.session_state.music_playing else "🔇 Tampilkan / Sembunyikan Musik"
+)
 
-            function playTrack(i) {{
-                audio.src = playlist[i];
-                audio.play().then(() => {{
-                    btn.innerHTML = "🎵";
-                    btn.style.backgroundColor = "#ff4444";
-                    btn.classList.add("rotating");
-                    isPlaying = true;
-                }}).catch(err => {{
-                    console.log("Autoplay diblokir, klik tombol untuk memulai:", err);
-                }});
-            }}
+if toggle:
+    st.session_state.music_playing = not st.session_state.music_playing
 
-            btn.addEventListener("click", () => {{
-                if (!isPlaying) {{
-                    playTrack(index);
-                }} else {{
-                    audio.pause();
-                    btn.innerHTML = "🎵";
-                    btn.style.backgroundColor = "#1db954";
-                    btn.classList.remove("rotating");
-                    isPlaying = false;
-                }}
-            }});
-
-            audio.addEventListener("ended", () => {{
-                index = (index + 1) % playlist.length;
-                playTrack(index);
-            }});
-        }});
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
+if st.session_state.music_playing and os.path.exists(music_file):
+    st.markdown(f"""
+    <div class="music-control">
+        <audio controls autoplay loop>
+            <source src="{music_file}" type="audio/mpeg">
+        </audio>
+    </div>
+    """, unsafe_allow_html=True)
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
