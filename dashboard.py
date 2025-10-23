@@ -23,7 +23,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK
+# CSS DARK FUTURISTIK & TOMBOL BAWAH FIXED
 # =========================
 st.markdown("""
 <style>
@@ -35,8 +35,17 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
+    padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
+
+[data-testid="stSidebar"] button[kind="secondaryFormSubmit"] {
+    position: fixed;
+    bottom: 20px;
+    width: 200px;
+    left: 10px;
+    z-index: 999;
+}
 
 h1, h2, h3 {
     text-align: center;
@@ -84,9 +93,9 @@ def load_lottie_url(url):
 # =========================
 # ANIMASI LOTTIE
 # =========================
-LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"  # Halaman awal
-LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"  # Dashboard
-LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"  # Transisi
+LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
+LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
+LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
 
 # =========================
 # SISTEM HALAMAN
@@ -95,7 +104,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK
+# SISTEM MUSIK (RANDOM START VERSION)
 # =========================
 MUSIC_FOLDER = "musik"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -108,8 +117,10 @@ TRACKS = [
 existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 
 if len(existing_tracks) > 0:
-    st.sidebar.markdown("## 🎵 Musik Latar")
+    st.sidebar.markdown("---")
+    st.sidebar.header("🎵 Musik Latar")
 
+    # Simpan status musik
     if "show_audio_controls" not in st.session_state:
         st.session_state.show_audio_controls = True
     if "music_playing" not in st.session_state:
@@ -122,18 +133,18 @@ if len(existing_tracks) > 0:
     show_ctrl = st.sidebar.checkbox("Tampilkan Kontrol Musik", value=st.session_state.show_audio_controls)
     st.session_state.show_audio_controls = show_ctrl
 
-    # Tombol Play / Pause Musik
-    if st.sidebar.button("⏯️ Play / Pause Musik"):
+    # Tombol Play / Pause
+    if st.sidebar.button("⏯️ Play / Pause Musik", key="music_pause_btn"):
         st.session_state.music_playing = not st.session_state.music_playing
 
+    # Volume
     vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
     st.session_state.audio_volume = vol
 
-    # Playlist ke JS
+    # Playlist dan pengaturan awal
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
-
     play_state = "true" if st.session_state.music_playing else "false"
     start_index = st.session_state.random_start
 
@@ -148,23 +159,27 @@ if len(existing_tracks) > 0:
     let index = {start_index};
     const audio = document.getElementById("bgAudio");
     audio.volume = {vol};
+
     function playTrack(i) {{
         audio.src = playlist[i];
         audio.play().catch(e => console.warn("Autoplay mungkin diblokir:", e));
     }}
+
+    // Main lagu acak pertama
     playTrack(index);
+
+    // Kalau musik selesai, lanjut ke lagu berikutnya
     audio.addEventListener("ended", () => {{
         index = (index + 1) % playlist.length;
         playTrack(index);
     }});
+
     if ({play_state} === false) {{
         audio.pause();
-    }} else {{
-        audio.play().catch(e => console.warn("Autoplay diblokir:", e));
     }}
     </script>
     """
-    st.components.v1.html(audio_html, height=80, scrolling=False)
+    st.components.v1.html(audio_html, height=0, scrolling=False)
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -172,7 +187,7 @@ if len(existing_tracks) > 0:
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
-    
+
     lottie = load_lottie_url(LOTTIE_WELCOME)
     if lottie:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
@@ -203,39 +218,33 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Tombol kembali
-    if st.button("⬅️ Kembali ke Halaman Awal"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    # =========================
-    # MODE ANALISIS
-    # =========================
+    # Mode AI
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
 
-    # =========================
-    # LOAD MODEL
-    # =========================
+    # Load model
     @st.cache_resource
     def load_models():
-        yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
-        classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
-        return yolo_model, classifier
+        try:
+            yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
+            classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
+            return yolo_model, classifier
+        except Exception as e:
+            st.warning(f"⚠️ Gagal memuat model. Pastikan file model ada di folder 'model/'. Error: {e}")
+            return None, None
 
     yolo_model, classifier = load_models()
 
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
-    if uploaded_file:
+    if uploaded_file and yolo_model and classifier:
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
             time.sleep(1.5)
 
-        # YOLO
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
@@ -253,7 +262,6 @@ elif st.session_state.page == "dashboard":
                 mime="image/png"
             )
 
-        # KLASIFIKASI
         elif mode == "Klasifikasi Gambar":
             st.info("🧠 Menjalankan klasifikasi gambar...")
             img_resized = img.resize((128, 128))
@@ -267,19 +275,26 @@ elif st.session_state.page == "dashboard":
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
-                <p><b>Kelas:</b> {class_index}</p>
+                <p><b>Kelas:</b> Index Kelas {class_index}</p>
                 <p><b>Akurasi:</b> {confidence:.2%}</p>
             </div>
             """, unsafe_allow_html=True)
 
-        # INSIGHT
         elif mode == "AI Insight":
             st.info("🔍 Mode Insight Aktif")
             st.markdown("""
             <div class="result-card">
                 <h3>💬 Insight Otomatis</h3>
                 <p>AI menganalisis pola visual, bentuk, dan warna utama.</p>
+                <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
+    elif uploaded_file and (yolo_model is None or classifier is None):
+        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
+
+    # Tombol kembali ke halaman awal (posisi fixed di sidebar)
+    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
