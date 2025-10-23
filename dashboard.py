@@ -139,7 +139,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (MENGGUNAKAN FOLDER 'music')
+# SISTEM MUSIK (MENGGUNAKAN FOLDER 'music' DENGAN PLAYLIST JS)
 # =======================================================
 MUSIC_FOLDER = "music" 
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -149,15 +149,18 @@ TRACKS_RAW = [
     os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
 ]
 
+# Hanya ambil trek yang benar-benar ada
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
-# Mempersiapkan playlist untuk JavaScript. Path: '/music/file.mp3'
+# Mempersiapkan playlist untuk JavaScript. Path yang paling sering berhasil adalah absolute path (dimulai dengan /)
+# Contoh: '/music/wildwest.mp3'
 playlist_for_js = ["/" + p for p in existing_tracks] 
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`.")
+    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Diperlukan `wildwest.mp3` dan `lostsagalobby.mp3`.")
 else:
+    # Menggunakan st.markdown untuk menginject HTML/JS custom
     st.markdown(
         f"""
         <audio id="bgAudio" style="display:none;"></audio> 
@@ -166,7 +169,6 @@ else:
         </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            // Contoh playlist: ["/music/wildwest.mp3", "/music/lostsagalobby.mp3"]
             const playlist = {playlist_js}; 
             let index = 0;
             let isPlaying = false;
@@ -175,7 +177,7 @@ else:
             const audio = document.getElementById("bgAudio"); 
 
             audio.volume = 0.6;
-            audio.loop = false;
+            audio.loop = false; // Set loop ke false agar bisa pindah ke trek berikutnya
             
             function updateButton(playing) {{
                 if (playing) {{
@@ -197,25 +199,25 @@ else:
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // PENTING: Cek Console Browser (F12) untuk melihat path yang dicoba.
+                    // DEBUG: Cek Console Browser (F12)
                     console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
                 }});
             }}
 
-            // Hanya coba play saat diklik (kebijakan browser)
+            // Logic saat tombol diklik (Play/Pause)
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
-                    // Coba putar track saat ini
-                    audio.src = playlist[index];
+                    // Jika di-pause, coba putar lagu saat ini
+                    audio.src = playlist[index]; // Pastikan src diset lagi
                     
                     audio.play().then(() => {{
                         isPlaying = true;
                         updateButton(true);
                     }}).catch(err => {{
                         console.error("Klik Gagal Memutar. Path:", audio.src, "Error:", err);
-                        // Jika gagal, coba track berikutnya
+                        // Jika gagal (misalnya karena cache), coba track berikutnya
                         index = (index + 1) % playlist.length;
                         playTrack(index); 
                     }});
@@ -227,6 +229,7 @@ else:
                 }}
             }});
 
+            // Logic saat lagu selesai (Pindah ke lagu berikutnya)
             audio.addEventListener("ended", function() {{
                 index = (index + 1) % playlist.length;
                 playTrack(index);
