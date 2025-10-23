@@ -147,95 +147,20 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (TOMBOL KLIK KANAN BAWAH)
 # =========================
-MUSIC_FOLDER = "music" # Diubah dari "music" ke "musik" agar konsisten dengan file Anda sebelumnya
-os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
-TRACKS = [
-    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
-    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
-]
+music_path = os.path.join("music", "lostsagalobby.mp3")
 
-existing_tracks = [p for p in TRACKS if os.path.exists(p)]
+if os.path.exists(music_path):
+    if "show_music" not in st.session_state:
+        st.session_state.show_music = True
 
-if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`.")
+    toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.show_music)
+    st.session_state.show_music = toggle
+
+    if st.session_state.show_music:
+        st.audio(music_path, format="audio/mp3", start_time=0)
 else:
-    playlist_js = json.dumps(existing_tracks)
-    st.markdown(
-        f"""
-        <audio id="bgAudio" style="display:none;"></audio>
-        <div id="musicButton" class="music-button">
-            <span id="musicIcon">▶️</span> 
-        </div>
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js};
-            let index = 0;
-            let isPlaying = false;
-            const btn = document.getElementById("musicButton");
-            const icon = document.getElementById("musicIcon");
-            const audio = document.getElementById("bgAudio");
-
-            // Menggunakan Streamlit session state untuk sinkronisasi (jika ada)
-            audio.volume = 0.6;
-            audio.loop = false;
-            
-            function updateButton(playing) {{
-                if (playing) {{
-                    icon.innerHTML = "⏸️";
-                    btn.style.backgroundColor = "#ff4444"; // Merah saat main
-                    btn.classList.add("rotating");
-                }} else {{
-                    icon.innerHTML = "▶️";
-                    btn.style.backgroundColor = "#1db954"; // Hijau saat pause
-                    btn.classList.remove("rotating");
-                }}
-            }}
-
-            function playTrack(i) {{
-                audio.src = playlist[i];
-                audio.play().then(() => {{
-                    isPlaying = true;
-                    updateButton(true);
-                }}).catch(err => {{
-                    // Autoplay diblokir: Tetap atur tombol sebagai 'Play'
-                    isPlaying = false;
-                    updateButton(false);
-                    console.log("Autoplay diblokir. Klik tombol untuk memutar.");
-                }});
-            }}
-
-            // Coba Autoplay saat dimuat
-            playTrack(index);
-
-            btn.addEventListener("click", function() {{
-                if (!isPlaying) {{
-                    // Jika diklik dan tidak main, coba putar
-                    audio.play().then(() => {{
-                        isPlaying = true;
-                        updateButton(true);
-                    }}).catch(err => {{
-                        // Gagal play: Pindah ke track berikutnya dan coba lagi
-                        index = (index + 1) % playlist.length;
-                        playTrack(index); 
-                    }});
-                }} else {{
-                    // Jika diklik dan sedang main, pause
-                    audio.pause();
-                    isPlaying = false;
-                    updateButton(false);
-                }}
-            }});
-
-            audio.addEventListener("ended", function() {{
-                index = (index + 1) % playlist.length;
-                playTrack(index);
-            }});
-        }});
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
+    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `my_music.mp3` ada di folder `/music`.")
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
