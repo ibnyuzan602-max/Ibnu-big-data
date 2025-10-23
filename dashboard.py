@@ -22,124 +22,20 @@ st.set_page_config(
 )
 
 # =========================
-# FUNGSI CALLBACK & UTILITY
+# CSS DARK FUTURISTIK
 # =========================
-def go_home():
-    """Mengubah session state untuk kembali ke halaman home."""
-    st.session_state.page = "home"
-
-def load_lottie_url(url):
-    """Memuat animasi Lottie."""
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            return r.json()
-    except:
-        return None
-    return None
-
-# =========================
-# ANIMASI LOTTIE
-# =========================
-LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
-LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
-LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
-
-# =========================
-# SISTEM HALAMAN
-# =========================
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
-
-# =======================================================
-# SISTEM MUSIK (FINAL FIX: MENGGUNAKAN CACHE UNTUK STABILITAS PATH)
-# =======================================================
-MUSIC_FOLDER = "music"
-
-@st.cache_resource
-def get_music_paths():
-    """Memuat dan menyimpan path file musik ke cache untuk mencegah TypeError."""
-    music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
-    music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
-    return music_path_1, music_path_2
-
-def display_music_players():
-    """Mengisolasi logika dan pemanggilan widget st.audio di sidebar."""
-    
-    # Mengambil path dari cache (lebih stabil dari variabel global)
-    music_path_1, music_path_2 = get_music_paths()
-    
-    exists_1 = os.path.exists(music_path_1)
-    exists_2 = os.path.exists(music_path_2)
-
-    # Hanya tampilkan jika setidaknya satu file ada
-    if not (exists_1 or exists_2):
-        st.sidebar.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
-        return
-
-    # Semua widget musik di dalam sidebar context
-    with st.sidebar:
-        # PENTING: Gunakan st.checkbox sederhana tanpa st.sidebar.
-        if "show_music" not in st.session_state:
-            st.session_state.show_music = True
-
-        st.markdown("---")
-        toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
-        st.session_state.show_music = toggle
-        
-        if st.session_state.show_music:
-            st.header("🎶 Music Player")
-
-            if exists_1:
-                st.caption("Track 1: Wild West")
-                # Pemanggilan st.audio yang stabil
-                st.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
-            else:
-                st.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
-            
-            st.markdown("---")
-
-            if exists_2:
-                st.caption("Track 2: Lost Saga Lobby")
-                st.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
-            else:
-                st.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
-        st.markdown("---") 
-
-# Panggil fungsi di level tertinggi skrip
-display_music_players()
-# =======================================================
-
-
-# =========================
-# CSS DARK FUTURISTIK (Setelah Panggilan Musik untuk Konsistensi)
-# =========================
-# Pastikan tidak ada karakter sisa JavaScript di sini lagi!
 st.markdown("""
 <style>
-/* Latar Belakang Aplikasi */
 [data-testid="stAppViewContainer"] {
     background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
     color: white;
 }
-/* Sidebar */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
-    padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
-
-/* CSS untuk memposisikan tombol kembali di paling bawah sidebar (Fixed) */
-[data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
-    position: fixed;
-    bottom: 20px;
-    width: 200px; 
-    left: 10px; 
-    z-index: 999;
-}
 
 h1, h2, h3 {
     text-align: center;
@@ -169,9 +65,129 @@ h1, h2, h3 {
     width: 90%;
     margin: 15px auto;
 }
+
+/* Tombol Musik di Kanan Bawah */
+.music-button {
+    position: fixed;
+    bottom: 20px;
+    right: 25px;
+    background-color: #1db954;
+    color: white;
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+}
+.music-button:hover {
+    transform: scale(1.1);
+}
+
+/* Animasi Rotasi Tombol Musik */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.rotating {
+    animation: spin 4s linear infinite;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# =========================
+# FUNGSI LOAD LOTTIE
+# =========================
+def load_lottie_url(url):
+    try:
+        r = requests.get(url)
+        if r.status_code == 200:
+            return r.json()
+    except:
+        return None
+    return None
+
+# =========================
+# ANIMASI LOTTIE
+# =========================
+LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
+LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
+LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
+
+# =========================
+# SISTEM HALAMAN
+# =========================
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+# =========================
+# SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
+# =========================
+MUSIC_FOLDER = "music"
+os.makedirs(MUSIC_FOLDER, exist_ok=True)
+
+TRACKS = [
+    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
+    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
+]
+
+existing_tracks = [p for p in TRACKS if os.path.exists(p)]
+
+if len(existing_tracks) == 0:
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
+else:
+    playlist_js = json.dumps(existing_tracks)
+    st.markdown(
+        f"""
+        <div id="musicButton" class="music-button">🎵</div>
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {{
+            const playlist = {playlist_js};
+            let index = 0;
+            let isPlaying = false;
+            const btn = document.getElementById("musicButton");
+            const audio = new Audio();
+            audio.volume = 0.6;
+            audio.loop = false;
+
+            function playTrack(i) {{
+                audio.src = playlist[i];
+                audio.play().then(() => {{
+                    btn.innerHTML = "🎵";
+                    btn.style.backgroundColor = "#ff4444";
+                    btn.classList.add("rotating");
+                    isPlaying = true;
+                }}).catch(err => {{
+                    console.log("Autoplay diblokir, klik tombol untuk memulai:", err);
+                }});
+            }}
+
+            btn.addEventListener("click", () => {{
+                if (!isPlaying) {{
+                    playTrack(index);
+                }} else {{
+                    audio.pause();
+                    btn.innerHTML = "🎵";
+                    btn.style.backgroundColor = "#1db954";
+                    btn.classList.remove("rotating");
+                    isPlaying = false;
+                }}
+            }});
+
+            audio.addEventListener("ended", () => {{
+                index = (index + 1) % playlist.length;
+                playTrack(index);
+            }});
+        }});
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -210,37 +226,22 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # =========================
-    # MODE ANALISIS
-    # =========================
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    
-    # Placeholder untuk memisahkan tombol 'Mode AI' dan tombol 'Kembali'
-    st.sidebar.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
-    st.sidebar.markdown("---")
 
-    # =========================
-    # LOGIKA MODEL & UPLOAD
-    # =========================
     @st.cache_resource
     def load_models():
-        try:
-            yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
-            classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
-            return yolo_model, classifier
-        except Exception as e:
-            st.warning(f"⚠️ Gagal memuat model: {e}")
-            return None, None
+        yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
+        classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
+        return yolo_model, classifier
 
     yolo_model, classifier = load_models()
 
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
-    if uploaded_file and yolo_model and classifier:
-        # ... (Logika Analisis Gambar)
+    if uploaded_file:
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
@@ -252,6 +253,7 @@ elif st.session_state.page == "dashboard":
             results = yolo_model.predict(source=img_cv2)
             result_img = results[0].plot()
             st.image(result_img, caption="🎯 Hasil Deteksi", use_container_width=True)
+
             img_bytes = io.BytesIO()
             Image.fromarray(result_img).save(img_bytes, format="PNG")
             img_bytes.seek(0)
@@ -262,9 +264,11 @@ elif st.session_state.page == "dashboard":
             img_resized = img.resize((128, 128))
             img_array = image.img_to_array(img_resized)
             img_array = np.expand_dims(img_array, axis=0) / 255.0
+
             prediction = classifier.predict(img_array)
             class_index = np.argmax(prediction)
             confidence = np.max(prediction)
+
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
@@ -279,16 +283,7 @@ elif st.session_state.page == "dashboard":
             <div class="result-card">
                 <h3>💬 Insight Otomatis</h3>
                 <p>AI menganalisis pola visual, bentuk, dan warna utama.</p>
-                <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
-            
-    elif uploaded_file and (yolo_model is None or classifier is None):
-        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
-        
-    # =========================
-    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
-    # =========================
-    st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True, on_click=go_home)
