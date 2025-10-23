@@ -10,7 +10,7 @@ import io
 import os
 import json
 from streamlit_lottie import st_lottie
-import base64  # <— tambahkan agar bisa encode musik ke base64 untuk autoplay
+import base64  # untuk encode musik ke base64 agar bisa autoplay lewat HTML
 
 # =========================
 # KONFIGURASI DASAR
@@ -133,39 +133,49 @@ if "page" not in st.session_state:
 music_path = os.path.join("music", "lostsagalobby.mp3")
 if "music_playing" not in st.session_state:
     st.session_state.music_playing = False
+if "music_visible" not in st.session_state:
+    st.session_state.music_visible = True  # baru: kontrol tampilan, bukan playback
 
 if os.path.exists(music_path):
-    # Tombol toggle di sidebar
-    toggle_music = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.music_playing)
-    if toggle_music != st.session_state.music_playing:
-        st.session_state.music_playing = toggle_music
+    # Tombol di sidebar hanya untuk sembunyikan / tampilkan, tidak memengaruhi musik
+    toggle_music = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Player Musik", value=st.session_state.music_visible)
+    if toggle_music != st.session_state.music_visible:
+        st.session_state.music_visible = toggle_music
         st.rerun()
 
-    # Encode musik ke base64 agar bisa dikontrol lewat JavaScript
+    # Encode musik ke base64 agar bisa dikontrol lewat JS
     with open(music_path, "rb") as f:
         audio_data = f.read()
         audio_b64 = base64.b64encode(audio_data).decode()
 
-    # HTML player tersembunyi + kontrol JS
+    # HTML player tersembunyi (autoplay manual)
     music_html = f"""
     <audio id="bgMusic" loop>
         <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
     </audio>
     <script>
     const music = document.getElementById('bgMusic');
-    const playState = {'true' if st.session_state.music_playing else 'false'};
-    if (playState) {{
+    let playing = {'true' if st.session_state.music_playing else 'false'};
+    if (playing) {{
         music.play();
-    }} else {{
-        music.pause();
     }}
     </script>
     """
     st.markdown(music_html, unsafe_allow_html=True)
 
-    # Tombol melayang kanan bawah
+    # Jika player ditampilkan
+    if st.session_state.music_visible:
+        st.sidebar.markdown("#### 🎵 Kontrol Musik")
+        if st.sidebar.button("▶️ Mainkan Musik", use_container_width=True):
+            st.session_state.music_playing = True
+            st.rerun()
+        if st.sidebar.button("⏸️ Hentikan Musik", use_container_width=True):
+            st.session_state.music_playing = False
+            st.rerun()
+
+    # Tombol melayang kanan bawah untuk toggle play/pause
     music_icon = "🔊" if st.session_state.music_playing else "🎵"
-    music_button_html = f"""
+    button_html = f"""
     <form action="" method="get">
         <button name="toggle_music" class="music-button {'rotating' if st.session_state.music_playing else ''}"
                 type="submit" formaction="?music={'off' if st.session_state.music_playing else 'on'}">
@@ -173,14 +183,14 @@ if os.path.exists(music_path):
         </button>
     </form>
     """
-    st.markdown(music_button_html, unsafe_allow_html=True)
+    st.markdown(button_html, unsafe_allow_html=True)
 
-    # Tangkap query dari tombol melayang
-    query_params = st.query_params
-    if "music" in query_params:
-        if query_params["music"] == "on":
+    # Query dari tombol melayang
+    query = st.query_params
+    if "music" in query:
+        if query["music"] == "on":
             st.session_state.music_playing = True
-        elif query_params["music"] == "off":
+        elif query["music"] == "off":
             st.session_state.music_playing = False
         st.experimental_set_query_params()
         st.rerun()
@@ -189,7 +199,7 @@ else:
     st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `lostsagalobby.mp3` ada di folder `/music`.")
 
 # =========================
-# HALAMAN 1: WELCOME PAGE
+# HALAMAN 1: WELCOME
 # =========================
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
@@ -206,9 +216,9 @@ if st.session_state.page == "home":
         if st.button("🚀 Masuk ke Website", use_container_width=True):
             st.session_state.page = "dashboard"
             with st.spinner("🔄 Memuat halaman..."):
-                trans_anim = load_lottie_url(LOTTIE_TRANSITION)
-                if trans_anim:
-                    st_lottie(trans_anim, height=200, key="transition_anim")
+                anim = load_lottie_url(LOTTIE_TRANSITION)
+                if anim:
+                    st_lottie(anim, height=200, key="transition_anim")
                 time.sleep(1.5)
             st.rerun()
 
@@ -225,7 +235,6 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # MODE ANALISIS
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
@@ -295,7 +304,6 @@ elif st.session_state.page == "dashboard":
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
 
-    # Tombol kembali
     if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
