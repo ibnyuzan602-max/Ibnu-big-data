@@ -128,35 +128,19 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
 # =========================
-MUSIC_PATHS = {
-    "Wild West": "music/wildwest.mp3",
-    "Lost Saga Lobby": "music/lostsagalobby.mp3"
-}
+music_path = os.path.join("music", "wildwest.mp3")
 
-os.makedirs("music", exist_ok=True)
+if os.path.exists(music_path):
+    if "show_music" not in st.session_state:
+        st.session_state.show_music = True
 
-selected_music = st.sidebar.selectbox("🎵 Pilih Music:", list(MUSIC_PATHS.keys()))
-music_file = MUSIC_PATHS[selected_music]
+    toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.show_music)
+    st.session_state.show_music = toggle
 
-# =========================
-# KONTROL MUSIK
-# =========================
-st.sidebar.markdown("---")
-toggle = st.sidebar.button(
-    "🎶 Tampilkan / Sembunyikan Musik" if st.session_state.music_playing else "🔇 Tampilkan / Sembunyikan Musik"
-)
-
-if toggle:
-    st.session_state.music_playing = not st.session_state.music_playing
-
-if st.session_state.music_playing and os.path.exists(music_file):
-    st.markdown(f"""
-    <div class="music-control">
-        <audio controls autoplay loop>
-            <source src="{music_file}" type="audio/mpeg">
-        </audio>
-    </div>
-    """, unsafe_allow_html=True)
+    if st.session_state.show_music:
+        st.audio(music_path, format="audio/mp3", start_time=0)
+else:
+    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `my_music.mp3` ada di folder `/music`.")
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
