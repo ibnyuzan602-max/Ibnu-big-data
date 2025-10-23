@@ -22,17 +22,22 @@ st.set_page_config(
 )
 
 # =========================
+# FUNGSI CALLBACK (UNTUK TOMBOL YANG MENGUBAH HALAMAN)
+# =========================
+def go_home():
+    """Mengubah session state untuk kembali ke halaman home."""
+    st.session_state.page = "home"
+
+# =========================
 # CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
 # =========================
 st.markdown("""
 <style>
 /* ... (Bagian CSS Anda tetap sama) ... */
-/* Latar Belakang Aplikasi */
 [data-testid="stAppViewContainer"] {
     background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
     color: white;
 }
-/* Sidebar */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
@@ -41,8 +46,7 @@ st.markdown("""
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
-/* PERHATIAN: CSS ini akan bentrok dengan tombol custom music di kanan bawah */
+/* FIX: Perbaikan CSS untuk tombol kembali (memastikan posisi fixed) */
 [data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
     position: fixed;
     bottom: 20px;
@@ -50,6 +54,7 @@ st.markdown("""
     left: 10px; 
     z-index: 999;
 }
+/* Hapus semua CSS terkait .music-button dan .rotating jika Anda menggunakan st.audio */
 
 h1, h2, h3 {
     text-align: center;
@@ -79,43 +84,11 @@ h1, h2, h3 {
     width: 90%;
     margin: 15px auto;
 }
-
-/* Tombol Musik di Kanan Bawah */
-.music-button {
-    position: fixed;
-    bottom: 20px;
-    right: 25px;
-    background-color: #1db954;
-    color: white;
-    border-radius: 50%;
-    width: 55px;
-    height: 55px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    cursor: pointer;
-    z-index: 9999;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.2s ease;
-}
-.music-button:hover {
-    transform: scale(1.1);
-}
-
-/* Animasi Rotasi Tombol Musik */
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-.rotating {
-    animation: spin 4s linear infinite;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# FUNGSI LOAD LOTTIE
+# FUNGSI LOAD LOTTIE (Tidak Berubah)
 # =========================
 def load_lottie_url(url):
     try:
@@ -127,20 +100,21 @@ def load_lottie_url(url):
     return None
 
 # =========================
-# ANIMASI LOTTIE
+# ANIMASI LOTTIE (Tidak Berubah)
 # =========================
 LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
 LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
 LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
 
 # =========================
-# SISTEM HALAMAN
+# SISTEM HALAMAN (Tidak Berubah)
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
+
 # =======================================================
-# SISTEM MUSIK (MENGGUNAKAN DUA PLAYER st.audio) - Pindah ke Sidebar
+# SISTEM MUSIK (MENGGUNAKAN DUA PLAYER st.audio) - FIX TYPERROR
 # =======================================================
 MUSIC_FOLDER = "music"
 music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
@@ -149,43 +123,46 @@ music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
 exists_1 = os.path.exists(music_path_1)
 exists_2 = os.path.exists(music_path_2)
 
-# Gunakan placeholder untuk player musik di sidebar
-music_container = st.sidebar.empty()
+# Menggunakan sidebar container untuk widget
+with st.sidebar:
+    st.markdown("---")
+    
+    # Logic untuk menampilkan checkbox dan player musik
+    if exists_1 or exists_2:
+        if "show_music" not in st.session_state:
+            st.session_state.show_music = True
 
-if exists_1 or exists_2:
-    if "show_music" not in st.session_state:
-        st.session_state.show_music = True
-
-    # PENTING: Panggil widget di container (st.sidebar.empty())
-    with music_container:
-        st.sidebar.markdown("---")
-        # Menggunakan st.sidebar.checkbox adalah OK
-        toggle = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
+        toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
         st.session_state.show_music = toggle
         
         if st.session_state.show_music:
-            st.sidebar.header("🎶 Music Player")
-            if exists_1:
-                st.sidebar.caption("Track 1: Wild West")
-                st.sidebar.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
-            else:
-                st.sidebar.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
+            st.header("🎶 Music Player")
             
-            st.sidebar.markdown("---")
-
-            if exists_2:
-                st.sidebar.caption("Track 2: Lost Saga Lobby")
-                st.sidebar.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
+            # TRACK 1
+            if exists_1:
+                st.caption("Track 1: Wild West")
+                # Pemanggilan st.audio yang aman
+                st.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
             else:
-                st.sidebar.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
-else:
-    music_container.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
+                st.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
+            
+            st.markdown("---")
+
+            # TRACK 2
+            if exists_2:
+                st.caption("Track 2: Lost Saga Lobby")
+                st.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
+            else:
+                st.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
+
+    else:
+        st.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
+    st.markdown("---") # Garis pemisah sebelum tombol Mode AI
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
 # =========================
 if st.session_state.page == "home":
-    # ... (Konten Halaman Home Anda) ...
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
     
@@ -237,7 +214,6 @@ elif st.session_state.page == "dashboard":
     @st.cache_resource
     def load_models():
         try:
-            # Menggunakan os.path.join agar kompatibel dengan berbagai OS
             yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
             classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
             return yolo_model, classifier
@@ -250,7 +226,7 @@ elif st.session_state.page == "dashboard":
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file and yolo_model and classifier:
-        # ... (Logika Analisis Gambar) ...
+        # ... (Logika Analisis Gambar)
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
@@ -299,10 +275,6 @@ elif st.session_state.page == "dashboard":
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
         
     # =========================
-    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
+    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED) - FIX TYPERROR
     # =========================
-    # Menggunakan callback sederhana untuk mencegah TypeError (Traceback 1)
-    def go_home():
-        st.session_state.page = "home"
-    
     st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True, on_click=go_home)
