@@ -139,9 +139,9 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (PERCOBAAN PATH ABSOLUT DARI ROOT)
+# SISTEM MUSIK (MENGGUNAKAN FOLDER 'music')
 # =======================================================
-MUSIC_FOLDER = "music" # Menggunakan 'musik' untuk konsistensi dengan path absolut
+MUSIC_FOLDER = "music" 
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS_RAW = [
@@ -151,13 +151,12 @@ TRACKS_RAW = [
 
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
-# Mempersiapkan playlist untuk JavaScript. Di sini kita membuat path absolut.
-# Contoh: '/musik/wildwest.mp3'
-playlist_for_js = ["/" + p for p in existing_tracks] # Tambahkan '/' di awal
+# Mempersiapkan playlist untuk JavaScript. Path: '/music/file.mp3'
+playlist_for_js = ["/" + p for p in existing_tracks] 
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
+    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`.")
 else:
     st.markdown(
         f"""
@@ -167,7 +166,7 @@ else:
         </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            // playlist = ["/music/wildwest.mp3", "/music/lostsagalobby.mp3"]
+            // Contoh playlist: ["/music/wildwest.mp3", "/music/lostsagalobby.mp3"]
             const playlist = {playlist_js}; 
             let index = 0;
             let isPlaying = false;
@@ -198,7 +197,7 @@ else:
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // DEBUG: HARUS DICEK DI CONSOLE BROWSER (F12)
+                    // PENTING: Cek Console Browser (F12) untuk melihat path yang dicoba.
                     console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
