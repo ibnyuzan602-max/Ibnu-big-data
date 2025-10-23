@@ -141,7 +141,7 @@ if "page" not in st.session_state:
 # =======================================================
 # SISTEM MUSIK (PERCOBAAN PATH ABSOLUT DARI ROOT)
 # =======================================================
-MUSIC_FOLDER = "musik" # Menggunakan 'musik' untuk konsistensi dengan path absolut
+MUSIC_FOLDER = "music" # Menggunakan 'musik' untuk konsistensi dengan path absolut
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS_RAW = [
@@ -157,7 +157,7 @@ playlist_for_js = ["/" + p for p in existing_tracks] # Tambahkan '/' di awal
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
 else:
     st.markdown(
         f"""
