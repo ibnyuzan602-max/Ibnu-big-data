@@ -34,8 +34,20 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
+    /* Menambahkan padding-bottom untuk tombol di bawah */
+    padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
+
+/* CSS untuk memposisikan tombol di paling bawah sidebar */
+.bottom-button {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
 
 h1, h2, h3 {
     text-align: center;
@@ -94,7 +106,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (MODIFIKASI UNTUK AUTOPLAY)
+# SISTEM MUSIK (MODIFIKASI: FORCE AUTOPLAY & TOMBOL NAVIGASI)
 # =========================
 MUSIC_FOLDER = "musik"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -131,7 +143,6 @@ if len(existing_tracks) > 0:
     # Playlist ke JS
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
-    # Menambahkan 'autoplay' ke tag audio
     autoplay_attr = "autoplay"
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
 
@@ -139,7 +150,7 @@ if len(existing_tracks) > 0:
 
     audio_html = f"""
     <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr}>
+        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr}> 
             Your browser does not support the audio element.
         </audio>
     </div>
@@ -151,13 +162,18 @@ if len(existing_tracks) > 0:
     
     function playTrack(i) {{
         audio.src = playlist[i];
-        // Memanggil play() segera
-        audio.play().catch(e => console.warn("Autoplay mungkin diblokir:", e));
+        audio.play().catch(e => {{
+            // Jika autoplay gagal, simulasikan interaksi klik pada body
+            console.warn("Autoplay diblokir, mencoba simulasi klik...");
+            document.body.click(); 
+            audio.play().catch(err => console.error("Gagal memutar setelah simulasi klik:", err));
+        }});
     }}
 
     // Panggil playTrack hanya jika musik diizinkan
     if ({play_state} === true) {{
-        playTrack(index);
+        // Timeout 500ms untuk memastikan elemen audio sudah sepenuhnya dimuat
+        setTimeout(() => playTrack(index), 500); 
     }}
 
     audio.addEventListener("ended", () => {{
@@ -168,9 +184,6 @@ if len(existing_tracks) > 0:
     // Sinkronisasi status Play/Pause dinamis
     if ({play_state} === false) {{
         audio.pause();
-    }} else {{
-        // Coba play lagi jika play_state true (penting setelah user interaksi/klik)
-        audio.play().catch(e => console.warn("Autoplay diblokir:", e));
     }}
     </script>
     """
@@ -207,13 +220,6 @@ elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
     st.markdown("### Sistem Deteksi dan Klasifikasi Gambar Cerdas")
 
-    # Tombol kembali DIPINDAHKAN KE SIDEBAR
-    st.sidebar.markdown("---")
-    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", use_container_width=True):
-        st.session_state.page = "home"
-        st.rerun()
-    st.sidebar.markdown("---")
-
     lottie_ai = load_lottie_url(LOTTIE_DASHBOARD)
     if lottie_ai:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
@@ -234,12 +240,11 @@ elif st.session_state.page == "dashboard":
     @st.cache_resource
     def load_models():
         try:
-            # Pastikan path model benar
             yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
             classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
             return yolo_model, classifier
         except Exception as e:
-            st.error(f"⚠️ Gagal memuat model. Pastikan file model ada di folder 'model/'. Error: {e}")
+            st.warning(f"⚠️ Gagal memuat model. Pastikan file model ada di folder 'model/'. Error: {e}")
             return None, None
 
     yolo_model, classifier = load_models()
@@ -300,6 +305,39 @@ elif st.session_state.page == "dashboard":
             </div>
             """, unsafe_allow_html=True)
     elif uploaded_file and (yolo_model is None or classifier is None):
-        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa konsol dan path model.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
+
+    # =========================
+    # TOMBOL KEMBALI DI BAWAH SIDEBAR (MODIFIKASI)
+    # =========================
+    # Menggunakan HTML/CSS untuk menempatkan tombol di bagian bawah sidebar
+    button_html = """
+    <div class="bottom-button">
+        <button id="back_button" style="width: 100%; border: 1px solid #333; border-radius: 8px; background: rgba(50, 50, 80, 0.9); color: white; padding: 10px; cursor: pointer;">
+            ⬅️ Kembali ke Halaman Awal
+        </button>
+    </div>
+    <script>
+    const backButton = document.getElementById('back_button');
+    if (backButton) {
+        // Klik tombol akan memicu Streamlit re-run
+        backButton.onclick = () => {
+            const body = document.body;
+            // Ini akan mensimulasikan klik tombol Streamlit
+            Streamlit.setComponentValue('back_to_home', Math.random()); 
+        };
+    }
+    </script>
+    """
+    st.components.v1.html(button_html, height=60)
+    
+    # Logic untuk menangkap klik tombol HTML
+    if st.session_state.get('back_to_home'):
+        st.session_state.page = "home"
+        del st.session_state.back_to_home
+        st.rerun()
+
+    # Tambahkan elemen Streamlit di sidebar untuk menangkap event (tetap tersembunyi)
+    st.sidebar.button("Hidden Back Button", key="back_to_home", on_click=lambda: st.session_state.update(page="home"), style="display: none;")
