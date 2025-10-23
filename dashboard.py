@@ -9,8 +9,7 @@ import time
 import io
 import os
 import json
-# Import Streamlit component for JS communication
-from streamlit.components.v1 import html
+# Tidak perlu mengimpor 'html' secara terpisah lagi, cukup gunakan st.components.v1.html jika diperlukan
 from streamlit_lottie import st_lottie
 
 # =========================
@@ -24,8 +23,9 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK & TOMBOL BAWAH
+# CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
 # =========================
+# Menggunakan CSS untuk memposisikan tombol Streamlit native di paling bawah
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -42,28 +42,15 @@ st.markdown("""
 [data-testid="stSidebar"] * { color: white !important; }
 
 /* CSS untuk memposisikan tombol di paling bawah sidebar (Fixed) */
-.bottom-button {
+/* Mencari tombol dengan key 'back_to_home_fixed' */
+[data-testid="stSidebar"] button[kind="secondaryFormSubmit"] {
     position: fixed;
     bottom: 20px;
-    /* Lebar sidebar default Streamlit adalah 210px, sesuaikan jika perlu */
-    width: 200px; 
-    left: 10px; 
+    width: 200px; /* Lebar Sidebar default Streamlit */
+    left: 10px; /* Margin kiri */
     z-index: 999;
 }
-.bottom-button button {
-    width: 100%;
-    border: 1px solid #333; 
-    border-radius: 8px; 
-    background: rgba(50, 50, 80, 0.9); 
-    color: white; 
-    padding: 10px; 
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s;
-}
-.bottom-button button:hover {
-    background: rgba(80, 80, 110, 0.9); 
-}
+
 
 h1, h2, h3 {
     text-align: center;
@@ -116,23 +103,13 @@ LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json
 LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"  # Transisi
 
 # =========================
-# SISTEM HALAMAN & TOMBOL KEMBALI FIX
+# SISTEM HALAMAN
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
-# State untuk menangkap event dari tombol HTML kustom
-if 'back_to_home_clicked' not in st.session_state:
-    st.session_state.back_to_home_clicked = False
-    
-# Logic untuk menangani klik tombol kembali dari HTML
-if st.session_state.back_to_home_clicked:
-    st.session_state.page = "home"
-    st.session_state.back_to_home_clicked = False
-    st.rerun()
-
 
 # =========================
-# SISTEM MUSIK (MEMAKSA AUTOPLAY)
+# SISTEM MUSIK (VERSI LEBIH BERSIH & STABIL)
 # =========================
 MUSIC_FOLDER = "musik"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -157,7 +134,7 @@ if len(existing_tracks) > 0:
     st.session_state.show_audio_controls = show_ctrl
 
     # Tombol Play / Pause Musik
-    if st.sidebar.button("⏯️ Play / Pause Musik"):
+    if st.sidebar.button("⏯️ Play / Pause Musik", key="music_pause_btn"):
         st.session_state.music_playing = not st.session_state.music_playing
 
     # Volume musik
@@ -166,17 +143,17 @@ if len(existing_tracks) > 0:
     vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
     st.session_state.audio_volume = vol
 
-    # Playlist ke JS
+    # Variabel untuk tag HTML
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
+    # Atribut autoplay, sering diblokir, tapi tetap dicoba
     autoplay_attr = "autoplay"
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
-
     play_state = "true" if st.session_state.music_playing else "false"
 
     audio_html = f"""
     <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr}> 
+        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr} loop> 
             Your browser does not support the audio element.
         </audio>
     </div>
@@ -188,17 +165,12 @@ if len(existing_tracks) > 0:
     
     function playTrack(i) {{
         audio.src = playlist[i];
-        audio.play().catch(e => {{
-            // **COBA PAKSA AUTOPLAY:** Mensimulasikan klik mouse pada dokumen
-            console.warn("Autoplay diblokir, mencoba simulasi interaksi...");
-            document.body.click(); 
-            audio.play().catch(err => console.error("Gagal memutar setelah simulasi klik:", err));
-        }});
+        // Hanya mencoba play. Jika gagal karena batasan browser, biarkan saja.
+        audio.play().catch(e => console.warn("Autoplay diblokir:", e));
     }}
 
-    // Panggil playTrack hanya jika musik diizinkan
     if ({play_state} === true) {{
-        // Gunakan setImmediate atau setTimeout agar audio diputar setelah DOM siap
+        // Coba play setelah DOM siap
         setTimeout(() => playTrack(index), 100); 
     }}
 
@@ -207,13 +179,14 @@ if len(existing_tracks) > 0:
         playTrack(index);
     }});
     
-    // Sinkronisasi status Play/Pause dinamis
+    // Sinkronisasi Pause
     if ({play_state} === false) {{
         audio.pause();
     }}
     </script>
     """
-    html(audio_html, height=0, scrolling=False) # Tinggi diatur 0 agar tidak mengganggu layout
+    # Menggunakan st.components.v1.html
+    st.components.v1.html(audio_html, height=0, scrolling=False) 
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -337,35 +310,9 @@ elif st.session_state.page == "dashboard":
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
 
     # =========================
-    # TOMBOL KEMBALI DI BAWAH SIDEBAR (FIXED POSITION)
+    # TOMBOL KEMBALI DI BAWAH SIDEBAR (MENGGUNAKAN NATIVE BUTTON + CSS FIXED)
     # =========================
-    # Gunakan kunci unik untuk menangkap input
-    back_button_value = html("""
-    <script>
-    // Inisialisasi Streamlit Component Value
-    window.parent.postMessage({
-        type: 'streamlit:setComponentValue',
-        value: { back_clicked: false },
-        id: 'back_to_home_btn'
-    }, '*');
-
-    // Fungsi untuk mengirim pesan kembali ke Streamlit
-    function sendBackToHome() {
-        window.parent.postMessage({
-            type: 'streamlit:setComponentValue',
-            value: { back_clicked: true },
-            id: 'back_to_home_btn'
-        }, '*');
-    }
-    </script>
-    <div class="bottom-button">
-        <button onclick="sendBackToHome()">
-            ⬅️ Kembali ke Halaman Awal
-        </button>
-    </div>
-    """, height=60, key='back_to_home_btn')
-
-    # Tangkap hasil dari komponen HTML
-    if back_button_value is not None and back_button_value.get('back_clicked', False):
-        st.session_state.back_to_home_clicked = True
+    # Tombol native Streamlit yang akan diposisikan dengan CSS
+    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
+        st.session_state.page = "home"
         st.rerun()
