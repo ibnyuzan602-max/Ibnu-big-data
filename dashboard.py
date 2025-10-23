@@ -9,7 +9,6 @@ import time
 import io
 import os
 import json
-import random
 from streamlit_lottie import st_lottie
 
 # =========================
@@ -23,7 +22,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS
+# CSS UTAMA
 # =========================
 st.markdown("""
 <style>
@@ -73,6 +72,29 @@ h1, h2, h3 {
     width: 90%;
     margin: 15px auto;
 }
+/* Tombol musik mengambang */
+#music-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 25px;
+    background-color: #1e1e2f;
+    border: 2px solid #555;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+#music-btn:hover {
+    background-color: #292943;
+    transform: scale(1.05);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -100,13 +122,11 @@ LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
-if "music_initialized" not in st.session_state:
-    st.session_state.music_initialized = False
 
 # =========================
-# SISTEM MUSIK (dipanggil saat user klik tombol “Masuk”)
+# MUSIK FLOATING BUTTON 🎵
 # =========================
-def init_music_player():
+def music_floating_button():
     MUSIC_FOLDER = "musik"
     os.makedirs(MUSIC_FOLDER, exist_ok=True)
     TRACKS = [
@@ -115,91 +135,78 @@ def init_music_player():
     ]
     existing_tracks = [p for p in TRACKS if os.path.exists(p)]
     if not existing_tracks:
-        st.sidebar.warning("⚠️ File musik tidak ditemukan di folder 'musik'.")
         return
 
-    if "audio_volume" not in st.session_state:
-        st.session_state.audio_volume = 0.6
-    if "music_playing" not in st.session_state:
-        st.session_state.music_playing = True
-    if "show_audio_controls" not in st.session_state:
-        st.session_state.show_audio_controls = True
-
-    vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
-    st.session_state.audio_volume = vol
-
-    show_ctrl = st.sidebar.checkbox("Tampilkan Kontrol Musik", value=st.session_state.show_audio_controls)
-    st.session_state.show_audio_controls = show_ctrl
-
-    if st.sidebar.button("⏯️ Play / Pause Musik"):
-        st.session_state.music_playing = not st.session_state.music_playing
-
     playlist_js = json.dumps(existing_tracks)
-    controls_attr = "controls" if st.session_state.show_audio_controls else ""
-    style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
-    play_state = "true" if st.session_state.music_playing else "false"
-    start_index = random.randint(0, len(existing_tracks) - 1)
 
-    audio_html = f"""
-    <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <audio id="bgAudio" {controls_attr} {style_attr}>
-            Your browser does not support the audio element.
-        </audio>
-    </div>
+    html_code = f"""
+    <audio id="bgMusic" loop></audio>
+    <button id="music-btn">🎵</button>
     <script>
-    const playlist = {playlist_js};
-    let index = {start_index};
-    const audio = document.getElementById("bgAudio");
-    audio.volume = {vol};
-    function playTrack(i) {{
-        audio.src = playlist[i];
-        audio.play().catch(e => console.warn("Autoplay mungkin diblokir sampai user klik:", e));
+    const tracks = {playlist_js};
+    let audio = document.getElementById("bgMusic");
+    let btn = document.getElementById("music-btn");
+    let playing = false;
+    let current = 0;
+
+    function playTrack() {{
+        audio.src = tracks[current];
+        audio.play().catch(e => console.warn("Autoplay diblokir, tunggu klik user"));
     }}
-    playTrack(index);
+
+    btn.onclick = function() {{
+        if (!playing) {{
+            playTrack();
+            audio.volume = 0.6;
+            btn.innerText = "⏸️";
+            playing = true;
+        }} else {{
+            audio.pause();
+            btn.innerText = "🎵";
+            playing = false;
+        }}
+    }}
+
     audio.addEventListener("ended", () => {{
-        index = (index + 1) % playlist.length;
-        playTrack(index);
+        current = (current + 1) % tracks.length;
+        playTrack();
     }});
-    if ({play_state} === false) {{
-        audio.pause();
-    }}
     </script>
     """
-    st.components.v1.html(audio_html, height=0, scrolling=False)
+    st.components.v1.html(html_code, height=0, scrolling=False)
 
 # =========================
-# HALAMAN 1: HOME
+# HALAMAN HOME
 # =========================
 if st.session_state.page == "home":
-    st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
     lottie = load_lottie_url(LOTTIE_WELCOME)
     if lottie:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
         st_lottie(lottie, height=300, key="welcome_anim")
         st.markdown("</div>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3 = st.columns([1,1,1])
     with col2:
         if st.button("🚀 Masuk ke Website", use_container_width=True):
             st.session_state.page = "dashboard"
-            st.session_state.music_initialized = True  # inisialisasi musik setelah klik
             with st.spinner("🔄 Memuat halaman..."):
                 trans_anim = load_lottie_url(LOTTIE_TRANSITION)
                 if trans_anim:
                     st_lottie(trans_anim, height=200, key="transition_anim")
                 time.sleep(1.5)
             st.rerun()
+    # Tambahkan tombol musik di halaman home juga
+    music_floating_button()
 
 # =========================
-# HALAMAN 2: DASHBOARD
+# HALAMAN DASHBOARD
 # =========================
 elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
     st.markdown("### Sistem Deteksi dan Klasifikasi Gambar Cerdas")
 
-    if st.session_state.music_initialized:
-        init_music_player()
+    music_floating_button()  # tetap tampil di dashboard juga
 
     lottie_ai = load_lottie_url(LOTTIE_DASHBOARD)
     if lottie_ai:
@@ -207,13 +214,11 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # MODE
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
 
-    # LOAD MODEL
     @st.cache_resource
     def load_models():
         try:
@@ -266,7 +271,6 @@ elif st.session_state.page == "dashboard":
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
 
-    # Tombol kembali
     if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
