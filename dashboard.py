@@ -22,22 +22,108 @@ st.set_page_config(
 )
 
 # =========================
-# FUNGSI CALLBACK (UNTUK TOMBOL YANG MENGUBAH HALAMAN)
+# FUNGSI CALLBACK & UTILITY
 # =========================
 def go_home():
     """Mengubah session state untuk kembali ke halaman home."""
     st.session_state.page = "home"
 
+def load_lottie_url(url):
+    """Memuat animasi Lottie."""
+    try:
+        r = requests.get(url)
+        if r.status_code == 200:
+            return r.json()
+    except:
+        return None
+    return None
+
 # =========================
-# CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
+# ANIMASI LOTTIE
 # =========================
+LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
+LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
+LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
+
+# =========================
+# SISTEM HALAMAN
+# =========================
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+
+# =======================================================
+# SISTEM MUSIK (FINAL FIX: MENGGUNAKAN CACHE UNTUK STABILITAS PATH)
+# =======================================================
+MUSIC_FOLDER = "music"
+
+@st.cache_resource
+def get_music_paths():
+    """Memuat dan menyimpan path file musik ke cache untuk mencegah TypeError."""
+    music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
+    music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
+    return music_path_1, music_path_2
+
+def display_music_players():
+    """Mengisolasi logika dan pemanggilan widget st.audio di sidebar."""
+    
+    # Mengambil path dari cache (lebih stabil dari variabel global)
+    music_path_1, music_path_2 = get_music_paths()
+    
+    exists_1 = os.path.exists(music_path_1)
+    exists_2 = os.path.exists(music_path_2)
+
+    # Hanya tampilkan jika setidaknya satu file ada
+    if not (exists_1 or exists_2):
+        st.sidebar.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
+        return
+
+    # Semua widget musik di dalam sidebar context
+    with st.sidebar:
+        # PENTING: Gunakan st.checkbox sederhana tanpa st.sidebar.
+        if "show_music" not in st.session_state:
+            st.session_state.show_music = True
+
+        st.markdown("---")
+        toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
+        st.session_state.show_music = toggle
+        
+        if st.session_state.show_music:
+            st.header("🎶 Music Player")
+
+            if exists_1:
+                st.caption("Track 1: Wild West")
+                # Pemanggilan st.audio yang stabil
+                st.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
+            else:
+                st.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
+            
+            st.markdown("---")
+
+            if exists_2:
+                st.caption("Track 2: Lost Saga Lobby")
+                st.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
+            else:
+                st.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
+        st.markdown("---") 
+
+# Panggil fungsi di level tertinggi skrip
+display_music_players()
+# =======================================================
+
+
+# =========================
+# CSS DARK FUTURISTIK (Setelah Panggilan Musik untuk Konsistensi)
+# =========================
+# Pastikan tidak ada karakter sisa JavaScript di sini lagi!
 st.markdown("""
 <style>
-/* ... (Bagian CSS Anda tetap sama) ... */
+/* Latar Belakang Aplikasi */
 [data-testid="stAppViewContainer"] {
     background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
     color: white;
 }
+/* Sidebar */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
@@ -46,7 +132,7 @@ st.markdown("""
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* FIX: Perbaikan CSS untuk tombol kembali (memastikan posisi fixed) */
+/* CSS untuk memposisikan tombol kembali di paling bawah sidebar (Fixed) */
 [data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
     position: fixed;
     bottom: 20px;
@@ -54,7 +140,6 @@ st.markdown("""
     left: 10px; 
     z-index: 999;
 }
-/* Hapus semua CSS terkait .music-button dan .rotating jika Anda menggunakan st.audio */
 
 h1, h2, h3 {
     text-align: center;
@@ -87,85 +172,6 @@ h1, h2, h3 {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# FUNGSI LOAD LOTTIE (Tidak Berubah)
-# =========================
-def load_lottie_url(url):
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            return r.json()
-    except:
-        return None
-    return None
-
-# =========================
-# ANIMASI LOTTIE (Tidak Berubah)
-# =========================
-LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
-LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
-LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
-
-# =========================
-# SISTEM HALAMAN (Tidak Berubah)
-# =========================
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
-
-# =======================================================
-# SISTEM MUSIK (FIX FINAL: MENGAMBIL SEMUA VARIABEL PATH SECARA LOKAL)
-# =======================================================
-MUSIC_FOLDER = "music" # Biarkan ini tetap global jika Anda menggunakannya di tempat lain
-
-def display_music_players():
-    """
-    Mengisolasi logika dan pemanggilan widget st.audio di sidebar.
-    Semua variabel path didefinisikan secara lokal untuk stabilitas.
-    """
-    # FIX: DEFINISIKAN PATH LOKAL DI DALAM FUNGSI
-    music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
-    music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
-    
-    exists_1 = os.path.exists(music_path_1)
-    exists_2 = os.path.exists(music_path_2)
-
-    # Hanya jalankan jika setidaknya satu file ada
-    if not (exists_1 or exists_2):
-        st.sidebar.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
-        return
-
-    # Semua widget Streamlit ada di sini
-    with st.sidebar:
-        if "show_music" not in st.session_state:
-            st.session_state.show_music = True
-
-        st.markdown("---") 
-        toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
-        st.session_state.show_music = toggle
-        
-        if st.session_state.show_music:
-            st.header("🎶 Music Player")
-
-            if exists_1:
-                st.caption("Track 1: Wild West")
-                # Line 151 yang menyebabkan error: Sekarang path adalah variabel lokal
-                st.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
-            else:
-                st.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
-            
-            st.markdown("---")
-
-            if exists_2:
-                st.caption("Track 2: Lost Saga Lobby")
-                st.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
-            else:
-                st.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
-        st.markdown("---") 
-
-# Panggil fungsi di level tertinggi skrip
-display_music_players()
-# =======================================================
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -283,6 +289,6 @@ elif st.session_state.page == "dashboard":
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
         
     # =========================
-    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED) - FIX TYPERROR
+    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
     # =========================
     st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True, on_click=go_home)
