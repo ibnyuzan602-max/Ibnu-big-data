@@ -26,6 +26,7 @@ st.set_page_config(
 # =========================
 st.markdown("""
 <style>
+/* ... (Bagian CSS Anda tetap sama) ... */
 /* Latar Belakang Aplikasi */
 [data-testid="stAppViewContainer"] {
     background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
@@ -36,12 +37,12 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
-    /* Tambahkan ruang di bawah untuk tombol fixed */
     padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
 /* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
+/* PERHATIAN: CSS ini akan bentrok dengan tombol custom music di kanan bawah */
 [data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
     position: fixed;
     bottom: 20px;
@@ -139,55 +140,52 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (MENGGUNAKAN DUA PLAYER st.audio)
+# SISTEM MUSIK (MENGGUNAKAN DUA PLAYER st.audio) - Pindah ke Sidebar
 # =======================================================
-import os
-import streamlit as st
-# Pastikan Anda sudah mengimpor `os` di awal file Anda.
-
 MUSIC_FOLDER = "music"
 music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
 music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
 
-# Cek keberadaan kedua file
 exists_1 = os.path.exists(music_path_1)
 exists_2 = os.path.exists(music_path_2)
+
+# Gunakan placeholder untuk player musik di sidebar
+music_container = st.sidebar.empty()
 
 if exists_1 or exists_2:
     if "show_music" not in st.session_state:
         st.session_state.show_music = True
 
-    # Checkbox tunggal untuk menyembunyikan/menampilkan kedua player
-    toggle = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
-    st.session_state.show_music = toggle
-    
-    if st.session_state.show_music:
+    # PENTING: Panggil widget di container (st.sidebar.empty())
+    with music_container:
         st.sidebar.markdown("---")
-        st.sidebar.header("🎶 Music Player")
-
-        if exists_1:
-            st.sidebar.caption("Track 1: Wild West")
-            # Menggunakan key unik untuk setiap audio player
-            st.sidebar.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
-        else:
-            st.sidebar.warning(f"⚠️ File musik Track 1 (`wildwest.mp3`) tidak ditemukan di folder `{MUSIC_FOLDER}/`.")
+        # Menggunakan st.sidebar.checkbox adalah OK
+        toggle = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
+        st.session_state.show_music = toggle
         
-        st.sidebar.markdown("---")
+        if st.session_state.show_music:
+            st.sidebar.header("🎶 Music Player")
+            if exists_1:
+                st.sidebar.caption("Track 1: Wild West")
+                st.sidebar.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
+            else:
+                st.sidebar.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
+            
+            st.sidebar.markdown("---")
 
-        if exists_2:
-            st.sidebar.caption("Track 2: Lost Saga Lobby")
-            st.sidebar.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
-        else:
-            st.sidebar.warning(f"⚠️ File musik Track 2 (`lostsagalobby.mp3`) tidak ditemukan di folder `{MUSIC_FOLDER}/`.")
-
+            if exists_2:
+                st.sidebar.caption("Track 2: Lost Saga Lobby")
+                st.sidebar.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
+            else:
+                st.sidebar.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
 else:
-    # Jika kedua file tidak ada
-    st.sidebar.warning("⚠️ Kedua file musik (`wildwest.mp3` dan `lostsagalobby.mp3`) tidak ditemukan di folder `/music`.")
-    
+    music_container.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
+
 # =========================
 # HALAMAN 1: WELCOME PAGE
 # =========================
 if st.session_state.page == "home":
+    # ... (Konten Halaman Home Anda) ...
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
     
@@ -252,7 +250,7 @@ elif st.session_state.page == "dashboard":
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file and yolo_model and classifier:
-        # ... (Logika Analisis Gambar)
+        # ... (Logika Analisis Gambar) ...
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
@@ -303,7 +301,8 @@ elif st.session_state.page == "dashboard":
     # =========================
     # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
     # =========================
-    # Tombol Streamlit native, diposisikan oleh CSS di paling bawah.
-    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
+    # Menggunakan callback sederhana untuk mencegah TypeError (Traceback 1)
+    def go_home():
         st.session_state.page = "home"
-        st.rerun()
+    
+    st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True, on_click=go_home)
