@@ -26,10 +26,12 @@ st.set_page_config(
 # =========================
 st.markdown("""
 <style>
+/* Latar Belakang Aplikasi */
 [data-testid="stAppViewContainer"] {
     background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
     color: white;
 }
+/* Sidebar */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
@@ -40,6 +42,7 @@ st.markdown("""
 [data-testid="stSidebar"] * { color: white !important; }
 
 /* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
+/* Selector menargetkan container tombol Streamlit dan memposisikannya fixed */
 [data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
     position: fixed;
     bottom: 20px;
@@ -138,7 +141,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (PERBAIKAN PATH JAVASCRIPT)
+# SISTEM MUSIK (FIXED PATH DI JAVASCRIPT)
 # =========================
 MUSIC_FOLDER = "music" 
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -151,9 +154,9 @@ TRACKS_RAW = [
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`. Mohon cek penamaan folder dan file.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
 else:
-    # Menggunakan path mentah yang diharapkan Streamlit Cloud (e.g. 'music/file.mp3')
+    # Menggunakan path mentah (e.g. 'musik/file.mp3') dari Python
     playlist_js = json.dumps(existing_tracks) 
     
     st.markdown(
@@ -189,10 +192,9 @@ else:
             function playTrack(i) {{
                 let path = playlist[i];
                 
-                // PERBAIKAN UTAMA: Tambahkan tanda '/' di awal path 
-                // ini membantu browser menemukan file secara absolut dari root Streamlit
+                // FIX PATH: Pastikan path dimulai dengan '/'. Ini adalah cara paling andal
+                // agar browser menemukan file di Streamlit Cloud (e.g., /musik/wildwest.mp3).
                 if (!path.startsWith('/')) {{
-                    // Asumsi path yang benar di Cloud/Local adalah /music/file.mp3
                     path = '/' + path; 
                 }}
                 
@@ -202,30 +204,37 @@ else:
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // DEBUG: Tampilkan pesan jika gagal (CEK CONSOLE BROWSER!)
-                    console.error("Gagal Memutar Audio. Path yang dicoba:", audio.src, "Error:", err);
+                    // Pesan DEBUG untuk membantu Anda memeriksa Console Browser (F12)
+                    console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
                 }});
             }}
 
-            // HANYA COBA playTrack(index) jika pengguna mengklik
+            // Hanya coba play saat diklik (kebijakan browser)
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
-                    // Jika diklik dan tidak main, coba putar
-                    // Set src dan coba mainkan
+                    // Set src dan coba mainkan track saat ini
                     audio.src = playlist[index];
+                    
+                    // PERBAIKAN: Terapkan path fix lagi sebelum play
+                    let path = playlist[index];
+                    if (!path.startsWith('/')) {{
+                        path = '/' + path; 
+                    }}
+                    audio.src = path;
+                    
                     audio.play().then(() => {{
                         isPlaying = true;
                         updateButton(true);
                     }}).catch(err => {{
-                        console.error("Klik Gagal Memutar Audio. Path:", audio.src, "Error:", err);
-                        // Coba track berikutnya
+                        console.error("Klik Gagal Memutar. Path:", audio.src, "Error:", err);
+                        // Jika gagal, coba track berikutnya
                         index = (index + 1) % playlist.length;
                         playTrack(index); 
                     }});
                 }} else {{
-                    // Jika diklik dan sedang main, pause
+                    // Pause
                     audio.pause();
                     isPlaying = false;
                     updateButton(false);
@@ -297,6 +306,7 @@ elif st.session_state.page == "dashboard":
     @st.cache_resource
     def load_models():
         try:
+            # Menggunakan os.path.join agar kompatibel dengan berbagai OS
             yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
             classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
             return yolo_model, classifier
@@ -309,12 +319,12 @@ elif st.session_state.page == "dashboard":
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file and yolo_model and classifier:
+        # ... (Logika Analisis Gambar)
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
             time.sleep(1.5)
 
-        # ... (Logika Deteksi, Klasifikasi, Insight)
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
@@ -351,6 +361,7 @@ elif st.session_state.page == "dashboard":
                 <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
+            
     elif uploaded_file and (yolo_model is None or classifier is None):
         st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
@@ -359,7 +370,7 @@ elif st.session_state.page == "dashboard":
     # =========================
     # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
     # =========================
-    # Tombol Streamlit native, diposisikan oleh CSS di paling bawah
+    # Tombol Streamlit native, diposisikan oleh CSS di paling bawah.
     if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
