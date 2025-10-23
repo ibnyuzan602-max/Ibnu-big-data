@@ -139,8 +139,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (MENGGUNAKAN FOLDER 'music' DENGAN PLAYLIST JS)
-# MEMUNGKINKAN LAGU BERGANTI SETELAH LAGU SEBELUMNYA SELESAI
+# SISTEM MUSIK (MANUAL PLAY SAAT DI-KLIK)
 # =======================================================
 MUSIC_FOLDER = "music" 
 
@@ -162,89 +161,85 @@ if len(existing_tracks) == 0:
     st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Pastikan file `wildwest.mp3` dan `lostsagalobby.mp3` ada.")
 else:
     # Injeksi elemen audio, tombol, dan skrip JavaScript
-    st.markdown(
-        f"""
-        <audio id="bgAudio" style="display:none;"></audio> 
-        <div id="musicButton" class="music-button">
-            <span id="musicIcon">▶️</span> 
-        </div>
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js}; 
-            let index = 0; // Index lagu yang sedang diputar
-            let isPlaying = false;
-            const btn = document.getElementById("musicButton");
-            const icon = document.getElementById("musicIcon");
-            const audio = document.getElementById("bgAudio"); 
+    js_code = f"""
+    <audio id="bgAudio" style="display:none;"></audio> 
+    <div id="musicButton" class="music-button">
+        <span id="musicIcon">▶️</span> 
+    </div>
+    <script>
+    (function() {{
+        const playlist = {playlist_js}; 
+        let index = 0; 
+        let isPlaying = false;
+        const btn = document.getElementById("musicButton");
+        const icon = document.getElementById("musicIcon");
+        const audio = document.getElementById("bgAudio"); 
 
-            audio.volume = 0.6;
-            audio.loop = false; // HARUS FALSE agar event 'ended' bisa di-trigger
-            
-            function updateButton(playing) {{
-                if (playing) {{
-                    icon.innerHTML = "⏸️";
-                    btn.style.backgroundColor = "#ff4444"; 
-                    btn.classList.add("rotating");
-                }} else {{
-                    icon.innerHTML = "▶️";
-                    btn.style.backgroundColor = "#1db954"; 
-                    btn.classList.remove("rotating");
-                }}
+        if (!btn || !audio || playlist.length === 0) return; 
+
+        audio.volume = 0.6;
+        audio.loop = false; // HARUS FALSE agar lagu bisa berganti
+        
+        function updateButton(playing) {{
+            icon.innerHTML = playing ? "⏸️" : "▶️";
+            btn.style.backgroundColor = playing ? "#ff4444" : "#1db954"; 
+            if (playing) {{
+                btn.classList.add("rotating");
+            }} else {{
+                btn.classList.remove("rotating");
             }}
+        }}
 
-            function playTrack(i) {{
-                // Pastikan index tidak melebihi batas playlist (circular)
-                index = i % playlist.length;
-                let path = playlist[index]; 
-                audio.src = path;
+        function playTrack(i) {{
+            index = i % playlist.length;
+            let path = playlist[index]; 
+            audio.src = path;
+            
+            // Mencoba memutar
+            audio.play().then(() => {{
+                isPlaying = true;
+                updateButton(true);
+            }}).catch(err => {{
+                console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
+                isPlaying = false;
+                updateButton(false);
+            }});
+        }}
+
+        // 1. LOGIKA PLAYLIST BERURUTAN (Setelah lagu selesai)
+        audio.addEventListener("ended", function() {{
+            const nextIndex = (index + 1) % playlist.length;
+            playTrack(nextIndex);
+        }});
+
+        // 2. LOGIKA KLIK TOMBOL (Manual Start/Pause)
+        btn.addEventListener("click", function() {{
+            if (!isPlaying) {{
+                // Play: Mulai dari lagu saat ini
+                if (!audio.src || audio.src === window.location.href) {{ // Cek jika sumber belum di-set atau kosong
+                    audio.src = playlist[index];
+                }}
                 
                 audio.play().then(() => {{
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
-                    isPlaying = false;
-                    updateButton(false);
+                    console.error("Klik Gagal Memutar. Error:", err);
                 }});
-            }}
-
-            // 🌟 LOGIKA UTAMA PLAYLIST BERURUTAN 🌟
-            // Event listener ini dipanggil KETIKA lagu selesai
-            audio.addEventListener("ended", function() {{
-                // Pindah ke index lagu berikutnya (circular)
-                const nextIndex = (index + 1) % playlist.length;
-                playTrack(nextIndex);
-            }});
-
-            // Logic saat tombol diklik (Play/Pause/Start)
-            btn.addEventListener("click", function() {{
-                if (!isPlaying) {{
-                    // Jika belum playing, mulai dari lagu saat ini (index)
-                    audio.src = playlist[index]; 
-                    
-                    audio.play().then(() => {{
-                        isPlaying = true;
-                        updateButton(true);
-                    }}).catch(err => {{
-                        console.error("Klik Gagal Memutar. Path:", audio.src, "Error:", err);
-                    }});
-                }} else {{
-                    // Pause
-                    audio.pause();
-                    isPlaying = false;
-                    updateButton(false);
-                }}
-            }});
-            
-            // Inisiasi: Set lagu pertama sebagai sumber
-            if (playlist.length > 0) {{
-                audio.src = playlist[index];
+            }} else {{
+                // Pause
+                audio.pause();
+                isPlaying = false;
+                updateButton(false);
             }}
         }});
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
+        
+        // CATATAN: TIDAK ADA audio.play() DI INISIASI
+        // Ini memastikan musik tidak akan dimulai kecuali diklik oleh pengguna.
+    }})();
+    </script>
+    """
+    st.markdown(js_code, unsafe_allow_html=True)
     
 # =========================
 # HALAMAN 1: WELCOME PAGE
