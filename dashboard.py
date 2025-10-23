@@ -120,44 +120,50 @@ MUSIC_FOLDER = "music"
 music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
 music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
 
-exists_1 = os.path.exists(music_path_1)
-exists_2 = os.path.exists(music_path_2)
+def display_music_players():
+    """
+    Mengisolasi logika dan pemanggilan widget st.audio di sidebar.
+    Ini membantu mencegah TypeErrors selama reruns.
+    """
+    exists_1 = os.path.exists(music_path_1)
+    exists_2 = os.path.exists(music_path_2)
 
-# Menggunakan sidebar container untuk widget
-with st.sidebar:
-    st.markdown("---")
-    
-    # Logic untuk menampilkan checkbox dan player musik
-    if exists_1 or exists_2:
+    # Hanya jalankan jika setidaknya satu file ada
+    if not (exists_1 or exists_2):
+        st.sidebar.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
+        return
+
+    # Semua widget Streamlit harus ada di sini (di dalam fungsi)
+    with st.sidebar:
         if "show_music" not in st.session_state:
             st.session_state.show_music = True
 
+        st.markdown("---") # Tambahkan pemisah di atas widget musik
         toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
         st.session_state.show_music = toggle
         
         if st.session_state.show_music:
             st.header("🎶 Music Player")
-            
-            # TRACK 1
+
             if exists_1:
                 st.caption("Track 1: Wild West")
-                # Pemanggilan st.audio yang aman
+                # Pemanggilan yang menyebabkan error (Line 145) sekarang terisolasi
                 st.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
             else:
                 st.warning(f"⚠️ Track 1 (`wildwest.mp3`) tidak ditemukan.")
             
             st.markdown("---")
 
-            # TRACK 2
             if exists_2:
                 st.caption("Track 2: Lost Saga Lobby")
                 st.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
             else:
                 st.warning(f"⚠️ Track 2 (`lostsagalobby.mp3`) tidak ditemukan.")
+        st.markdown("---") # Garis pemisah di bawah widget musik
 
-    else:
-        st.warning("⚠️ Kedua file musik tidak ditemukan di folder `/music`.")
-    st.markdown("---") # Garis pemisah sebelum tombol Mode AI
+# Panggil fungsi di level tertinggi skrip
+display_music_players()
+# =======================================================
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
