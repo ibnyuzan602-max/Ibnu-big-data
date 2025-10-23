@@ -141,104 +141,23 @@ if "page" not in st.session_state:
 # =======================================================
 # SISTEM MUSIK (MENGGUNAKAN FOLDER 'music' DENGAN PLAYLIST JS)
 # =======================================================
-MUSIC_FOLDER = "music" 
+# =========================
+# MUSIK LATAR
+# =========================
+music_path = os.path.join("music", "wildwest.mp3")
 
-# Daftar lagu yang ingin Anda masukkan ke playlist
-TRACKS_RAW = [
-    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
-    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
-]
+if os.path.exists(music_path):
+    if "show_music" not in st.session_state:
+        st.session_state.show_music = True
 
-# Hanya ambil trek yang benar-benar ada
-existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
+    toggle = st.checkbox("🎧 Tampilkan / Sembunyikan Musik", value=st.session_state.show_music)
+    st.session_state.show_music = toggle
 
-# Mempersiapkan playlist untuk JavaScript. Path yang paling sering berhasil adalah absolute path (dimulai dengan /)
-# Contoh: '/music/wildwest.mp3'
-playlist_for_js = ["/" + p for p in existing_tracks] 
-playlist_js = json.dumps(playlist_for_js) 
-
-if len(existing_tracks) == 0:
-    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Diperlukan `wildwest.mp3` dan `lostsagalobby.mp3`.")
+    if st.session_state.show_music:
+        st.audio(music_path, format="audio/mp3", start_time=0)
 else:
-    # Menggunakan st.markdown untuk menginject HTML/JS custom
-    st.markdown(
-        f"""
-        <audio id="bgAudio" style="display:none;"></audio> 
-        <div id="musicButton" class="music-button">
-            <span id="musicIcon">▶️</span> 
-        </div>
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {{
-            const playlist = {playlist_js}; 
-            let index = 0;
-            let isPlaying = false;
-            const btn = document.getElementById("musicButton");
-            const icon = document.getElementById("musicIcon");
-            const audio = document.getElementById("bgAudio"); 
-
-            audio.volume = 0.6;
-            audio.loop = false; // Set loop ke false agar bisa pindah ke trek berikutnya
-            
-            function updateButton(playing) {{
-                if (playing) {{
-                    icon.innerHTML = "⏸️";
-                    btn.style.backgroundColor = "#ff4444"; 
-                    btn.classList.add("rotating");
-                }} else {{
-                    icon.innerHTML = "▶️";
-                    btn.style.backgroundColor = "#1db954"; 
-                    btn.classList.remove("rotating");
-                }}
-            }}
-
-            function playTrack(i) {{
-                let path = playlist[i]; 
-                audio.src = path;
-                
-                audio.play().then(() => {{
-                    isPlaying = true;
-                    updateButton(true);
-                }}).catch(err => {{
-                    console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
-                    isPlaying = false;
-                    updateButton(false);
-                }});
-            }}
-
-            // Logic saat tombol diklik (Play/Pause)
-            btn.addEventListener("click", function() {{
-                if (!isPlaying) {{
-                    // Jika di-pause, coba putar lagu saat ini
-                    audio.src = playlist[index]; // Pastikan src diset lagi
-                    
-                    audio.play().then(() => {{
-                        isPlaying = true;
-                        updateButton(true);
-                    }}).catch(err => {{
-                        console.error("Klik Gagal Memutar. Path:", audio.src, "Error:", err);
-                        // Jika gagal, coba track berikutnya
-                        index = (index + 1) % playlist.length;
-                        playTrack(index); 
-                    }});
-                }} else {{
-                    // Pause
-                    audio.pause();
-                    isPlaying = false;
-                    updateButton(false);
-                }}
-            }});
-
-            // Logic saat lagu selesai (Pindah ke lagu berikutnya)
-            audio.addEventListener("ended", function() {{
-                index = (index + 1) % playlist.length;
-                playTrack(index);
-            }});
-        }});
-        </script>
-        """,
-        unsafe_allow_html=True
-    )
-
+    st.warning("⚠️ File musik tidak ditemukan di folder 'music/'. Pastikan file `my_music.mp3` ada di folder `/music`.")
+    
 # =========================
 # HALAMAN 1: WELCOME PAGE
 # =========================
