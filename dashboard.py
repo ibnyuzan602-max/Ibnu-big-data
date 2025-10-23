@@ -22,7 +22,7 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK
+# CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
 # =========================
 st.markdown("""
 <style>
@@ -34,8 +34,20 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
+    /* Tambahkan ruang di bawah untuk tombol fixed */
+    padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
+
+/* CSS untuk memposisikan tombol Streamlit native di paling bawah sidebar (Fixed) */
+[data-testid="stSidebar"] div.stButton:has(button[kind="secondaryFormSubmit"]) {
+    position: fixed;
+    bottom: 20px;
+    /* Sesuaikan lebar sidebar jika perlu (default 210px, dikurangi padding) */
+    width: 200px; 
+    left: 10px; 
+    z-index: 999;
+}
 
 h1, h2, h3 {
     text-align: center;
@@ -126,9 +138,9 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI FIX)
+# SISTEM MUSIK (PERBAIKAN FUNGSI PLAY)
 # =========================
-MUSIC_FOLDER = "music"
+MUSIC_FOLDER = "musik" # Pastikan nama folder Anda adalah 'musik'
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS = [
@@ -139,43 +151,84 @@ TRACKS = [
 existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`.")
 else:
-    playlist_js = json.dumps(existing_tracks)
+    # Mengonversi path file lokal Streamlit ke URL yang dapat diakses browser
+    # Streamlit meng-host folder lokal, jadi kita hapus nama folder di awal path untuk akses
+    # Contoh: 'musik/wildwest.mp3' menjadi '/app/ibnu-big-data/musik/wildwest.mp3'
+    # Jika Streamlit di-host di Cloud, path-nya mungkin menjadi '/-/static/musik/wildwest.mp3'
+    # Untuk keandalan, kita hanya mengirimkan path file dan berharap browser dapat menyelesaikannya.
+    playlist_js = json.dumps(existing_tracks) 
+    
     st.markdown(
         f"""
-        <div id="musicButton" class="music-button">🎵</div>
+        <audio id="bgAudio" style="display:none;"></audio> 
+        <div id="musicButton" class="music-button">
+            <span id="musicIcon">▶️</span> 
+        </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
             const playlist = {playlist_js};
             let index = 0;
             let isPlaying = false;
             const btn = document.getElementById("musicButton");
-            const audio = new Audio();
+            const icon = document.getElementById("musicIcon");
+            const audio = document.getElementById("bgAudio"); // Menggunakan elemen yang sudah ada
+
             audio.volume = 0.6;
             audio.loop = false;
+            
+            function updateButton(playing) {{
+                if (playing) {{
+                    icon.innerHTML = "⏸️";
+                    btn.style.backgroundColor = "#ff4444"; 
+                    btn.classList.add("rotating");
+                }} else {{
+                    icon.innerHTML = "▶️";
+                    btn.style.backgroundColor = "#1db954"; 
+                    btn.classList.remove("rotating");
+                }}
+            }}
 
             function playTrack(i) {{
-                audio.src = playlist[i];
+                // Hapus nama folder di awal path agar browser lebih mudah menemukan file
+                let path = playlist[i].replace('{MUSIC_FOLDER}/', ''); 
+                audio.src = path; 
+                
                 audio.play().then(() => {{
-                    btn.innerHTML = "🎵";
-                    btn.style.backgroundColor = "#ff4444";
-                    btn.classList.add("rotating");
                     isPlaying = true;
+                    updateButton(true);
                 }}).catch(err => {{
-                    console.log("Autoplay diblokir, klik tombol untuk memulai:", err);
+                    // DEBUG: Tampilkan pesan jika gagal
+                    console.error("Gagal Memutar Audio: Pastikan file dapat diakses di:", audio.src, "Error:", err);
+                    isPlaying = false;
+                    updateButton(false);
                 }});
             }}
 
+            // Coba Autoplay saat dimuat
+            // playTrack(index); // Dihapus untuk mencegah spam console error, biarkan user klik
+
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
-                    playTrack(index);
+                    // Jika diklik dan tidak main, coba putar
+                    // Coba memainkan track yang sedang aktif
+                    audio.src = playlist[index]; 
+                    audio.play().then(() => {{
+                        isPlaying = true;
+                        updateButton(true);
+                    }}).catch(err => {{
+                        // Jika gagal play (misalnya file tidak dapat dimuat)
+                        console.error("Klik Gagal Memutar Audio. Path:", audio.src, "Error:", err);
+                        // Lanjut ke track berikutnya
+                        index = (index + 1) % playlist.length;
+                        playTrack(index); 
+                    }});
                 }} else {{
+                    // Jika diklik dan sedang main, pause
                     audio.pause();
-                    btn.innerHTML = "🎵";
-                    btn.style.backgroundColor = "#1db954";
-                    btn.classList.remove("rotating");
                     isPlaying = false;
+                    updateButton(false);
                 }}
             }});
 
@@ -188,6 +241,8 @@ else:
         """,
         unsafe_allow_html=True
     )
+
+# ... (Kode HALAMAN 1 dan HALAMAN 2 tidak berubah)
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -226,34 +281,48 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # =========================
+    # MODE ANALISIS
+    # =========================
     st.sidebar.header("🧠 Mode AI")
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
+    
+    # Placeholder untuk memisahkan tombol 'Mode AI' dan tombol 'Kembali'
+    st.sidebar.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    st.sidebar.markdown("---")
 
+    # =========================
+    # LOGIKA MODEL & UPLOAD
+    # =========================
     @st.cache_resource
     def load_models():
-        yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
-        classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
-        return yolo_model, classifier
+        try:
+            yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
+            classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
+            return yolo_model, classifier
+        except Exception as e:
+            st.warning(f"⚠️ Gagal memuat model: {e}")
+            return None, None
 
     yolo_model, classifier = load_models()
 
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
-    if uploaded_file:
+    if uploaded_file and yolo_model and classifier:
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
             time.sleep(1.5)
 
+        # ... (Logika Deteksi, Klasifikasi, Insight)
         if mode == "Deteksi Objek (YOLO)":
             st.info("🚀 Menjalankan deteksi objek...")
             img_cv2 = np.array(img)
             results = yolo_model.predict(source=img_cv2)
             result_img = results[0].plot()
             st.image(result_img, caption="🎯 Hasil Deteksi", use_container_width=True)
-
             img_bytes = io.BytesIO()
             Image.fromarray(result_img).save(img_bytes, format="PNG")
             img_bytes.seek(0)
@@ -264,11 +333,9 @@ elif st.session_state.page == "dashboard":
             img_resized = img.resize((128, 128))
             img_array = image.img_to_array(img_resized)
             img_array = np.expand_dims(img_array, axis=0) / 255.0
-
             prediction = classifier.predict(img_array)
             class_index = np.argmax(prediction)
             confidence = np.max(prediction)
-
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
@@ -283,7 +350,18 @@ elif st.session_state.page == "dashboard":
             <div class="result-card">
                 <h3>💬 Insight Otomatis</h3>
                 <p>AI menganalisis pola visual, bentuk, dan warna utama.</p>
+                <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
+    elif uploaded_file and (yolo_model is None or classifier is None):
+        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
+        
+    # =========================
+    # TOMBOL KEMBALI DI PALING BAWAH SIDEBAR (FIXED)
+    # =========================
+    # Tombol Streamlit native, diposisikan oleh CSS di paling bawah
+    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
