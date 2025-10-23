@@ -130,25 +130,52 @@ if "page" not in st.session_state:
 # =========================
 # SISTEM MUSIK
 # =========================
-music_path = os.path.join("music", "lostsagalobby.mp3")
+music_folder = "music"
 
-if os.path.exists(music_path):
-    with open(music_path, "rb") as f:
-        audio_data = f.read()
-        audio_b64 = base64.b64encode(audio_data).decode()
+# Ambil semua file musik mp3 di folder /music
+if os.path.exists(music_folder):
+    music_files = [f for f in os.listdir(music_folder) if f.endswith(".mp3")]
 
-    audio_html = f"""
-    <audio controls loop style="width:100%">
-        <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-        Browser Anda tidak mendukung audio.
-    </audio>
-    """
+    if len(music_files) == 0:
+        st.sidebar.warning("⚠️ Tidak ada file musik di folder 'music/'.")
+    else:
+        st.sidebar.markdown("#### 🎧 Player Musik")
 
-    st.sidebar.markdown("#### 🎧 Player Musik")
-    st.sidebar.markdown(audio_html, unsafe_allow_html=True)
+        # Simpan lagu aktif di session_state
+        if "current_music" not in st.session_state:
+            st.session_state.current_music = music_files[0]
+
+        # Dropdown untuk pilih lagu
+        selected_music = st.sidebar.selectbox(
+            "Pilih Lagu:",
+            options=music_files,
+            index=music_files.index(st.session_state.current_music)
+        )
+
+        # Update jika lagu diganti
+        if selected_music != st.session_state.current_music:
+            st.session_state.current_music = selected_music
+            st.rerun()
+
+        # Path file musik aktif
+        music_path = os.path.join(music_folder, st.session_state.current_music)
+
+        # Encode file musik ke base64 untuk diputar di HTML
+        with open(music_path, "rb") as f:
+            audio_data = f.read()
+            audio_b64 = base64.b64encode(audio_data).decode()
+
+        # Player musik (manual control)
+        audio_html = f"""
+        <audio controls loop style="width:100%">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+            Browser Anda tidak mendukung audio.
+        </audio>
+        """
+        st.sidebar.markdown(audio_html, unsafe_allow_html=True)
+
 else:
-    st.sidebar.warning("⚠️ File musik tidak ditemukan di folder 'music/'.")
-
+    st.sidebar.warning("⚠️ Folder 'music/' tidak ditemukan.")
 # =========================
 # HALAMAN 1: WELCOME
 # =========================
