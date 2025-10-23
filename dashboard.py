@@ -138,26 +138,22 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (PERBAIKAN FUNGSI PLAY)
+# SISTEM MUSIK (PERBAIKAN PATH JAVASCRIPT)
 # =========================
-MUSIC_FOLDER = "music" # Pastikan nama folder Anda adalah 'musik'
+MUSIC_FOLDER = "musik" 
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
-TRACKS = [
+TRACKS_RAW = [
     os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
     os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
 ]
 
-existing_tracks = [p for p in TRACKS if os.path.exists(p)]
+existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
+    st.sidebar.warning("🎵 File musik belum ditemukan di folder `musik/`. Mohon cek penamaan folder dan file.")
 else:
-    # Mengonversi path file lokal Streamlit ke URL yang dapat diakses browser
-    # Streamlit meng-host folder lokal, jadi kita hapus nama folder di awal path untuk akses
-    # Contoh: 'musik/wildwest.mp3' menjadi '/app/ibnu-big-data/musik/wildwest.mp3'
-    # Jika Streamlit di-host di Cloud, path-nya mungkin menjadi '/-/static/musik/wildwest.mp3'
-    # Untuk keandalan, kita hanya mengirimkan path file dan berharap browser dapat menyelesaikannya.
+    # Menggunakan path mentah yang diharapkan Streamlit Cloud (e.g. 'musik/file.mp3')
     playlist_js = json.dumps(existing_tracks) 
     
     st.markdown(
@@ -173,7 +169,7 @@ else:
             let isPlaying = false;
             const btn = document.getElementById("musicButton");
             const icon = document.getElementById("musicIcon");
-            const audio = document.getElementById("bgAudio"); // Menggunakan elemen yang sudah ada
+            const audio = document.getElementById("bgAudio"); 
 
             audio.volume = 0.6;
             audio.loop = false;
@@ -191,36 +187,40 @@ else:
             }}
 
             function playTrack(i) {{
-                // Hapus nama folder di awal path agar browser lebih mudah menemukan file
-                let path = playlist[i].replace('{MUSIC_FOLDER}/', ''); 
-                audio.src = path; 
+                let path = playlist[i];
+                
+                // PERBAIKAN UTAMA: Tambahkan tanda '/' di awal path 
+                // ini membantu browser menemukan file secara absolut dari root Streamlit
+                if (!path.startsWith('/')) {{
+                    // Asumsi path yang benar di Cloud/Local adalah /musik/file.mp3
+                    path = '/' + path; 
+                }}
+                
+                audio.src = path;
                 
                 audio.play().then(() => {{
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // DEBUG: Tampilkan pesan jika gagal
-                    console.error("Gagal Memutar Audio: Pastikan file dapat diakses di:", audio.src, "Error:", err);
+                    // DEBUG: Tampilkan pesan jika gagal (CEK CONSOLE BROWSER!)
+                    console.error("Gagal Memutar Audio. Path yang dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
                 }});
             }}
 
-            // Coba Autoplay saat dimuat
-            // playTrack(index); // Dihapus untuk mencegah spam console error, biarkan user klik
-
+            // HANYA COBA playTrack(index) jika pengguna mengklik
             btn.addEventListener("click", function() {{
                 if (!isPlaying) {{
                     // Jika diklik dan tidak main, coba putar
-                    // Coba memainkan track yang sedang aktif
-                    audio.src = playlist[index]; 
+                    // Set src dan coba mainkan
+                    audio.src = playlist[index];
                     audio.play().then(() => {{
                         isPlaying = true;
                         updateButton(true);
                     }}).catch(err => {{
-                        // Jika gagal play (misalnya file tidak dapat dimuat)
                         console.error("Klik Gagal Memutar Audio. Path:", audio.src, "Error:", err);
-                        // Lanjut ke track berikutnya
+                        // Coba track berikutnya
                         index = (index + 1) % playlist.length;
                         playTrack(index); 
                     }});
@@ -241,8 +241,6 @@ else:
         """,
         unsafe_allow_html=True
     )
-
-# ... (Kode HALAMAN 1 dan HALAMAN 2 tidak berubah)
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
