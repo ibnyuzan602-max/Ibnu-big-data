@@ -142,7 +142,7 @@ if "page" not in st.session_state:
 # SISTEM MUSIK (MENGGUNAKAN FOLDER 'music' DENGAN PLAYLIST JS)
 # =======================================================
 MUSIC_FOLDER = "music" 
-os.makedirs(MUSIC_FOLDER, exist_ok=True)
+# os.makedirs(MUSIC_FOLDER, exist_ok=True) # Baris ini tidak perlu untuk deployment
 
 TRACKS_RAW = [
     os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
@@ -152,13 +152,13 @@ TRACKS_RAW = [
 # Hanya ambil trek yang benar-benar ada
 existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
 
-# Mempersiapkan playlist untuk JavaScript. Path yang paling sering berhasil adalah absolute path (dimulai dengan /)
-# Contoh: '/music/wildwest.mp3'
+# Mempersiapkan playlist untuk JavaScript. Kami akan menggunakan path relatif untuk keandalan:
+# Path yang paling andal di Streamlit Cloud adalah path yang disajikan oleh web server
 playlist_for_js = ["/" + p for p in existing_tracks] 
 playlist_js = json.dumps(playlist_for_js) 
 
 if len(existing_tracks) == 0:
-    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Diperlukan `wildwest.mp3` dan `lostsagalobby.mp3`.")
+    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`.")
 else:
     # Menggunakan st.markdown untuk menginject HTML/JS custom
     st.markdown(
@@ -199,7 +199,6 @@ else:
                     isPlaying = true;
                     updateButton(true);
                 }}).catch(err => {{
-                    // DEBUG: Cek Console Browser (F12)
                     console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
                     isPlaying = false;
                     updateButton(false);
@@ -217,7 +216,7 @@ else:
                         updateButton(true);
                     }}).catch(err => {{
                         console.error("Klik Gagal Memutar. Path:", audio.src, "Error:", err);
-                        // Jika gagal (misalnya karena cache), coba track berikutnya
+                        // Jika gagal, coba track berikutnya
                         index = (index + 1) % playlist.length;
                         playTrack(index); 
                     }});
