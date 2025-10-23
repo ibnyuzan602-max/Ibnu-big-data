@@ -88,6 +88,15 @@ h1, h2, h3 {
 .music-button:hover {
     transform: scale(1.1);
 }
+
+/* Animasi Rotasi Tombol Musik */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.rotating {
+    animation: spin 4s linear infinite;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -117,9 +126,9 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (MENGGUNAKAN IKON KECIL)
+# SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
 # =========================
-MUSIC_FOLDER = "music"  # Pastikan folder ini bernama 'music'
+MUSIC_FOLDER = "music"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
 
 TRACKS = [
@@ -132,41 +141,48 @@ existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 if len(existing_tracks) == 0:
     st.sidebar.warning("🎵 File musik belum ditemukan di folder `music/`.")
 else:
-    # Konversi ke JSON untuk JavaScript
     playlist_js = json.dumps(existing_tracks)
     st.markdown(
         f"""
         <div id="musicButton" class="music-button">🎵</div>
         <script>
-        const playlist = {playlist_js};
-        let index = 0;
-        let isPlaying = false;
-        const btn = document.getElementById("musicButton");
-        const audio = new Audio();
-        audio.volume = 0.6;
-        audio.loop = false;
+        document.addEventListener("DOMContentLoaded", function() {{
+            const playlist = {playlist_js};
+            let index = 0;
+            let isPlaying = false;
+            const btn = document.getElementById("musicButton");
+            const audio = new Audio();
+            audio.volume = 0.6;
+            audio.loop = false;
 
-        function playTrack(i) {{
-            audio.src = playlist[i];
-            audio.play().then(() => {{
-                btn.innerHTML = "🔇";
-                isPlaying = true;
-            }}).catch(e => console.log("Autoplay diblokir, klik tombol untuk memulai."));
-        }}
-
-        btn.addEventListener("click", () => {{
-            if (!isPlaying) {{
-                playTrack(index);
-            }} else {{
-                audio.pause();
-                btn.innerHTML = "🎵";
-                isPlaying = false;
+            function playTrack(i) {{
+                audio.src = playlist[i];
+                audio.play().then(() => {{
+                    btn.innerHTML = "🎵";
+                    btn.style.backgroundColor = "#ff4444";
+                    btn.classList.add("rotating");
+                    isPlaying = true;
+                }}).catch(err => {{
+                    console.log("Autoplay diblokir, klik tombol untuk memulai:", err);
+                }});
             }}
-        }});
 
-        audio.addEventListener("ended", () => {{
-            index = (index + 1) % playlist.length;
-            playTrack(index);
+            btn.addEventListener("click", () => {{
+                if (!isPlaying) {{
+                    playTrack(index);
+                }} else {{
+                    audio.pause();
+                    btn.innerHTML = "🎵";
+                    btn.style.backgroundColor = "#1db954";
+                    btn.classList.remove("rotating");
+                    isPlaying = false;
+                }}
+            }});
+
+            audio.addEventListener("ended", () => {{
+                index = (index + 1) % playlist.length;
+                playTrack(index);
+            }});
         }});
         </script>
         """,
