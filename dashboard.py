@@ -167,7 +167,7 @@ else:
         </div>
         <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            // playlist = ["/musik/wildwest.mp3", "/musik/lostsagalobby.mp3"]
+            // playlist = ["/music/wildwest.mp3", "/music/lostsagalobby.mp3"]
             const playlist = {playlist_js}; 
             let index = 0;
             let isPlaying = false;
