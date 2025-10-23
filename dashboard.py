@@ -139,107 +139,50 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =======================================================
-# SISTEM MUSIK (MANUAL PLAY SAAT DI-KLIK)
+# SISTEM MUSIK (MENGGUNAKAN DUA PLAYER st.audio)
 # =======================================================
-MUSIC_FOLDER = "music" 
+import os
+import streamlit as st
+# Pastikan Anda sudah mengimpor `os` di awal file Anda.
 
-# Daftar lagu di playlist
-TRACKS_RAW = [
-    os.path.join(MUSIC_FOLDER, "wildwest.mp3"),
-    os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3"),
-    # Tambahkan lebih banyak lagu di sini jika perlu
-]
+MUSIC_FOLDER = "music"
+music_path_1 = os.path.join(MUSIC_FOLDER, "wildwest.mp3")
+music_path_2 = os.path.join(MUSIC_FOLDER, "lostsagalobby.mp3")
 
-# Hanya ambil trek yang benar-benar ada
-existing_tracks = [p for p in TRACKS_RAW if os.path.exists(p)]
+# Cek keberadaan kedua file
+exists_1 = os.path.exists(music_path_1)
+exists_2 = os.path.exists(music_path_2)
 
-# Mempersiapkan playlist untuk JavaScript: '/music/file.mp3'
-playlist_for_js = ["/" + p for p in existing_tracks] 
-playlist_js = json.dumps(playlist_for_js) 
+if exists_1 or exists_2:
+    if "show_music" not in st.session_state:
+        st.session_state.show_music = True
 
-if len(existing_tracks) == 0:
-    st.sidebar.warning(f"🎵 File musik belum ditemukan di folder `{MUSIC_FOLDER}/`. Pastikan file `wildwest.mp3` dan `lostsagalobby.mp3` ada.")
+    # Checkbox tunggal untuk menyembunyikan/menampilkan kedua player
+    toggle = st.sidebar.checkbox("🎧 Tampilkan / Sembunyikan Music Players", value=st.session_state.show_music)
+    st.session_state.show_music = toggle
+    
+    if st.session_state.show_music:
+        st.sidebar.markdown("---")
+        st.sidebar.header("🎶 Music Player")
+
+        if exists_1:
+            st.sidebar.caption("Track 1: Wild West")
+            # Menggunakan key unik untuk setiap audio player
+            st.sidebar.audio(music_path_1, format="audio/mp3", start_time=0, key="audio_player_1")
+        else:
+            st.sidebar.warning(f"⚠️ File musik Track 1 (`wildwest.mp3`) tidak ditemukan di folder `{MUSIC_FOLDER}/`.")
+        
+        st.sidebar.markdown("---")
+
+        if exists_2:
+            st.sidebar.caption("Track 2: Lost Saga Lobby")
+            st.sidebar.audio(music_path_2, format="audio/mp3", start_time=0, key="audio_player_2")
+        else:
+            st.sidebar.warning(f"⚠️ File musik Track 2 (`lostsagalobby.mp3`) tidak ditemukan di folder `{MUSIC_FOLDER}/`.")
+
 else:
-    # Injeksi elemen audio, tombol, dan skrip JavaScript
-    js_code = f"""
-    <audio id="bgAudio" style="display:none;"></audio> 
-    <div id="musicButton" class="music-button">
-        <span id="musicIcon">▶️</span> 
-    </div>
-    <script>
-    (function() {{
-        const playlist = {playlist_js}; 
-        let index = 0; 
-        let isPlaying = false;
-        const btn = document.getElementById("musicButton");
-        const icon = document.getElementById("musicIcon");
-        const audio = document.getElementById("bgAudio"); 
-
-        if (!btn || !audio || playlist.length === 0) return; 
-
-        audio.volume = 0.6;
-        audio.loop = false; // HARUS FALSE agar lagu bisa berganti
-        
-        function updateButton(playing) {{
-            icon.innerHTML = playing ? "⏸️" : "▶️";
-            btn.style.backgroundColor = playing ? "#ff4444" : "#1db954"; 
-            if (playing) {{
-                btn.classList.add("rotating");
-            }} else {{
-                btn.classList.remove("rotating");
-            }}
-        }}
-
-        function playTrack(i) {{
-            index = i % playlist.length;
-            let path = playlist[index]; 
-            audio.src = path;
-            
-            // Mencoba memutar
-            audio.play().then(() => {{
-                isPlaying = true;
-                updateButton(true);
-            }}).catch(err => {{
-                console.error("Gagal Memutar Audio. Path dicoba:", audio.src, "Error:", err);
-                isPlaying = false;
-                updateButton(false);
-            }});
-        }}
-
-        // 1. LOGIKA PLAYLIST BERURUTAN (Setelah lagu selesai)
-        audio.addEventListener("ended", function() {{
-            const nextIndex = (index + 1) % playlist.length;
-            playTrack(nextIndex);
-        }});
-
-        // 2. LOGIKA KLIK TOMBOL (Manual Start/Pause)
-        btn.addEventListener("click", function() {{
-            if (!isPlaying) {{
-                // Play: Mulai dari lagu saat ini
-                if (!audio.src || audio.src === window.location.href) {{ // Cek jika sumber belum di-set atau kosong
-                    audio.src = playlist[index];
-                }}
-                
-                audio.play().then(() => {{
-                    isPlaying = true;
-                    updateButton(true);
-                }}).catch(err => {{
-                    console.error("Klik Gagal Memutar. Error:", err);
-                }});
-            }} else {{
-                // Pause
-                audio.pause();
-                isPlaying = false;
-                updateButton(false);
-            }}
-        }});
-        
-        // CATATAN: TIDAK ADA audio.play() DI INISIASI
-        // Ini memastikan musik tidak akan dimulai kecuali diklik oleh pengguna.
-
-    </script>
-    """
-    st.markdown(js_code, unsafe_allow_html=True)
+    # Jika kedua file tidak ada
+    st.sidebar.warning("⚠️ Kedua file musik (`wildwest.mp3` dan `lostsagalobby.mp3`) tidak ditemukan di folder `/music`.")
     
 # =========================
 # HALAMAN 1: WELCOME PAGE
