@@ -129,13 +129,13 @@ if "page" not in st.session_state:
 # SISTEM MUSIK (DENGAN TOMBOL KLIK DAN ANIMASI)
 # =========================
 MUSIC_PATHS = {
-    "Wild West": "musik/wildwest.mp3",
-    "Lost Saga Lobby": "musik/lostsagalobby.mp3"
+    "Wild West": "music/wildwest.mp3",
+    "Lost Saga Lobby": "music/lostsagalobby.mp3"
 }
 
-os.makedirs("musik", exist_ok=True)
+os.makedirs("music", exist_ok=True)
 
-selected_music = st.sidebar.selectbox("🎵 Pilih Musik:", list(MUSIC_PATHS.keys()))
+selected_music = st.sidebar.selectbox("🎵 Pilih Music:", list(MUSIC_PATHS.keys()))
 music_file = MUSIC_PATHS[selected_music]
 
 # =========================
