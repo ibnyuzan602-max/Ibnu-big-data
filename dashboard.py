@@ -23,31 +23,65 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK + TOMBOL MUSIK MELAYANG
+# CSS DARK FUTURISTIK + BACKGROUND HIDUP + TOMBOL MUSIK MELAYANG
 # =========================
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
-    color: white;
+/* Efek partikel lembut untuk background */
+@keyframes floatingBackground {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
+
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(270deg, #0b0b17, #1b1b2a, #101020);
+    background-size: 600% 600%;
+    animation: floatingBackground 15s ease infinite;
+    color: white;
+    position: relative;
+}
+
+/* Efek partikel bercahaya */
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.05) 0%, transparent 40%),
+                      radial-gradient(circle at 75% 75%, rgba(0,255,255,0.06) 0%, transparent 35%),
+                      radial-gradient(circle at 60% 20%, rgba(255,0,255,0.05) 0%, transparent 40%);
+    z-index: 0;
+    animation: floatParticles 20s ease-in-out infinite alternate;
+}
+
+@keyframes floatParticles {
+    from { transform: translateY(0px); }
+    to { transform: translateY(-20px); }
+}
+
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
     padding-bottom: 80px; 
+    z-index: 10;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
 h1, h2, h3 {
     text-align: center;
     font-family: 'Poppins', sans-serif;
+    position: relative;
+    z-index: 5;
 }
 .lottie-center {
     display: flex;
     justify-content: center;
     align-items: center;
     margin-top: 30px;
+    position: relative;
+    z-index: 5;
 }
 .result-card {
     background: rgba(255,255,255,0.05);
@@ -56,6 +90,8 @@ h1, h2, h3 {
     margin-top: 20px;
     text-align: center;
     box-shadow: 0 4px 25px rgba(0,0,0,0.25);
+    position: relative;
+    z-index: 5;
 }
 .warning-box {
     background-color: rgba(255, 193, 7, 0.1);
@@ -66,6 +102,8 @@ h1, h2, h3 {
     text-align: center;
     width: 90%;
     margin: 15px auto;
+    position: relative;
+    z-index: 5;
 }
 
 /* Tombol Musik di Kanan Bawah */
@@ -283,7 +321,7 @@ elif st.session_state.page == "dashboard":
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
 
-    # 🔹 TOMBOL KEMBALI — Sudah diperbaiki indentasinya
+    # 🔹 TOMBOL KEMBALI
     if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         st.session_state.page = "home"
         st.rerun()
