@@ -9,7 +9,7 @@ import time
 import io
 import os
 import json
-# Tidak perlu mengimpor 'html' secara terpisah lagi, cukup gunakan st.components.v1.html jika diperlukan
+import random
 from streamlit_lottie import st_lottie
 
 # =========================
@@ -23,9 +23,8 @@ st.set_page_config(
 )
 
 # =========================
-# CSS DARK FUTURISTIK & TOMBOL BAWAH (FIXED POSITION)
+# CSS DARK FUTURISTIK
 # =========================
-# Menggunakan CSS untuk memposisikan tombol Streamlit native di paling bawah
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -36,21 +35,8 @@ st.markdown("""
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
-    /* Tambahkan ruang di bawah untuk tombol fixed */
-    padding-bottom: 80px; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
-
-/* CSS untuk memposisikan tombol di paling bawah sidebar (Fixed) */
-/* Mencari tombol dengan key 'back_to_home_fixed' */
-[data-testid="stSidebar"] button[kind="secondaryFormSubmit"] {
-    position: fixed;
-    bottom: 20px;
-    width: 200px; /* Lebar Sidebar default Streamlit */
-    left: 10px; /* Margin kiri */
-    z-index: 999;
-}
-
 
 h1, h2, h3 {
     text-align: center;
@@ -109,7 +95,7 @@ if "page" not in st.session_state:
     st.session_state.page = "home"
 
 # =========================
-# SISTEM MUSIK (VERSI LEBIH BERSIH & STABIL)
+# SISTEM MUSIK
 # =========================
 MUSIC_FOLDER = "musik"
 os.makedirs(MUSIC_FOLDER, exist_ok=True)
@@ -122,71 +108,63 @@ TRACKS = [
 existing_tracks = [p for p in TRACKS if os.path.exists(p)]
 
 if len(existing_tracks) > 0:
-    st.sidebar.markdown("---")
-    st.sidebar.header("🎵 Musik Latar")
+    st.sidebar.markdown("## 🎵 Musik Latar")
 
     if "show_audio_controls" not in st.session_state:
         st.session_state.show_audio_controls = True
     if "music_playing" not in st.session_state:
         st.session_state.music_playing = True
+    if "audio_volume" not in st.session_state:
+        st.session_state.audio_volume = 0.6
+    if "random_start" not in st.session_state:
+        st.session_state.random_start = random.randint(0, len(existing_tracks) - 1)
 
     show_ctrl = st.sidebar.checkbox("Tampilkan Kontrol Musik", value=st.session_state.show_audio_controls)
     st.session_state.show_audio_controls = show_ctrl
 
     # Tombol Play / Pause Musik
-    if st.sidebar.button("⏯️ Play / Pause Musik", key="music_pause_btn"):
+    if st.sidebar.button("⏯️ Play / Pause Musik"):
         st.session_state.music_playing = not st.session_state.music_playing
 
-    # Volume musik
-    if "audio_volume" not in st.session_state:
-        st.session_state.audio_volume = 0.6
     vol = st.sidebar.slider("Volume", 0.0, 1.0, st.session_state.audio_volume, 0.05)
     st.session_state.audio_volume = vol
 
-    # Variabel untuk tag HTML
+    # Playlist ke JS
     playlist_js = json.dumps(existing_tracks)
     controls_attr = "controls" if st.session_state.show_audio_controls else ""
-    # Atribut autoplay, sering diblokir, tapi tetap dicoba
-    autoplay_attr = "autoplay"
     style_attr = "" if st.session_state.show_audio_controls else 'style="display:none;"'
+
     play_state = "true" if st.session_state.music_playing else "false"
+    start_index = st.session_state.random_start
 
     audio_html = f"""
     <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
-        <audio id="bgAudio" {controls_attr} {style_attr} {autoplay_attr} loop> 
+        <audio id="bgAudio" {controls_attr} {style_attr}>
             Your browser does not support the audio element.
         </audio>
     </div>
     <script>
     const playlist = {playlist_js};
-    let index = 0;
+    let index = {start_index};
     const audio = document.getElementById("bgAudio");
     audio.volume = {vol};
-    
     function playTrack(i) {{
         audio.src = playlist[i];
-        // Hanya mencoba play. Jika gagal karena batasan browser, biarkan saja.
-        audio.play().catch(e => console.warn("Autoplay diblokir:", e));
+        audio.play().catch(e => console.warn("Autoplay mungkin diblokir:", e));
     }}
-
-    if ({play_state} === true) {{
-        // Coba play setelah DOM siap
-        setTimeout(() => playTrack(index), 100); 
-    }}
-
+    playTrack(index);
     audio.addEventListener("ended", () => {{
         index = (index + 1) % playlist.length;
         playTrack(index);
     }});
-    
-    // Sinkronisasi Pause
     if ({play_state} === false) {{
         audio.pause();
+    }} else {{
+        audio.play().catch(e => console.warn("Autoplay diblokir:", e));
     }}
     </script>
     """
-    # Menggunakan st.components.v1.html
-    st.components.v1.html(audio_html, height=0, scrolling=False) 
+    st.components.v1.html(audio_html, height=80, scrolling=False)
 
 # =========================
 # HALAMAN 1: WELCOME PAGE
@@ -225,6 +203,11 @@ elif st.session_state.page == "dashboard":
         st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
+    # Tombol kembali
+    if st.button("⬅️ Kembali ke Halaman Awal"):
+        st.session_state.page = "home"
+        st.rerun()
+
     # =========================
     # MODE ANALISIS
     # =========================
@@ -238,20 +221,15 @@ elif st.session_state.page == "dashboard":
     # =========================
     @st.cache_resource
     def load_models():
-        try:
-            yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
-            classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
-            return yolo_model, classifier
-        except Exception as e:
-            st.warning(f"⚠️ Gagal memuat model. Pastikan file model ada di folder 'model/'. Error: {e}")
-            return None, None
+        yolo_model = YOLO(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt"))
+        classifier = tf.keras.models.load_model(os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5"))
+        return yolo_model, classifier
 
     yolo_model, classifier = load_models()
 
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
-    if uploaded_file and yolo_model and classifier:
-        # ... (Logika pemrosesan gambar)
+    if uploaded_file:
         img = Image.open(uploaded_file)
         st.image(img, caption="🖼️ Gambar yang Diupload", use_container_width=True)
         with st.spinner("🤖 AI sedang menganalisis gambar..."):
@@ -289,7 +267,7 @@ elif st.session_state.page == "dashboard":
             st.markdown(f"""
             <div class="result-card">
                 <h3>🧾 Hasil Prediksi</h3>
-                <p><b>Kelas:</b> Index Kelas {class_index}</p>
+                <p><b>Kelas:</b> {class_index}</p>
                 <p><b>Akurasi:</b> {confidence:.2%}</p>
             </div>
             """, unsafe_allow_html=True)
@@ -301,18 +279,7 @@ elif st.session_state.page == "dashboard":
             <div class="result-card">
                 <h3>💬 Insight Otomatis</h3>
                 <p>AI menganalisis pola visual, bentuk, dan warna utama.</p>
-                <p>Fitur ini masih dalam tahap pengembangan.</p>
             </div>
             """, unsafe_allow_html=True)
-    elif uploaded_file and (yolo_model is None or classifier is None):
-        st.markdown("<div class='warning-box'>⚠️ Model AI gagal dimuat. Harap periksa path model.</div>", unsafe_allow_html=True)
     else:
         st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
-
-    # =========================
-    # TOMBOL KEMBALI DI BAWAH SIDEBAR (MENGGUNAKAN NATIVE BUTTON + CSS FIXED)
-    # =========================
-    # Tombol native Streamlit yang akan diposisikan dengan CSS
-    if st.sidebar.button("⬅️ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
-        st.session_state.page = "home"
-        st.rerun()
