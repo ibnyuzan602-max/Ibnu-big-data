@@ -43,7 +43,7 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: PERBAIKAN DROPDOWN VISIBILITAS + AURORA ANIMASI
+# CSS: SOLUSI SCROLL + SELECTBOX
 # =========================
 st.markdown("""
 <style>
@@ -74,38 +74,44 @@ st.markdown("""
 }
 main, header, footer { position: relative; z-index: 10; }
 
-/* 2. Sidebar Style & Scroll */
+/* 2. Sidebar Style */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
     z-index: 15;
+    /* PENTING: Beri tinggi penuh layar dan sembunyikan scroll di kontainer luar */
+    height: 100vh !important;
+    overflow: hidden !important; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-/* KUNCI PERBAIKAN SCROLL */
+
+/* === SOLUSI SCROLL SIDEBAR UTAMA === */
+/* KUNCI: Targetkan konten sidebar untuk scroll */
 [data-testid="stSidebarContent"] {
+    /* Memaksa scroll bar vertikal muncul jika konten melebihi area */
     overflow-y: auto !important; 
+    /* Pastikan elemen konten mengisi penuh area yang tersedia (di dalam kontainer 100vh) */
+    height: 100%; 
     padding-bottom: 50px; 
 }
+/* =================================== */
 
 
-/* === PERBAIKAN VISIBILITAS SELECTBOX (NAMA LAGU) === */
-[data-testid="stSelectbox"] div[data-testid="stBody"] div[data-testid="stBody"] {
-    /* Latar belakang input Selectbox */
+/* === SOLUSI VISIBILITAS NAMA LAGU (SELECTBOX) === */
+/* Teks yang terlihat di dalam selectbox saat terpilih */
+[data-testid="stSelectbox"] div[data-testid="stBody"] {
     background-color: #333 !important; 
-    /* Teks di dalam input Selectbox (nama lagu yang terpilih) */
     color: white !important; 
 }
-
-/* Jika ini masih gagal, coba targetkan lebih dalam untuk elemen teks */
+/* Teks di dalam input (pastikan nama lagu terlihat) */
 [data-testid="stSelectbox"] input {
     color: white !important;
 }
-
-/* Warna teks di dropdown list saat dibuka */
-.st-bb {
-    color: #000; /* Ganti warna di daftar dropdown menjadi hitam (kontras dengan latar putih default) */
+/* Teks di dropdown list saat dibuka */
+div.st-bb {
+    color: #000 !important; /* Agar kontras dengan latar belakang putih default dropdown list */
 }
 /* ==================================================== */
 
@@ -132,10 +138,9 @@ if os.path.exists(music_folder):
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
         
-        # --- DEBUG LOGIC START ---
+        # Inisialisasi/Validasi current_music
         if "current_music" not in st.session_state or st.session_state.current_music not in music_files:
             st.session_state.current_music = music_files[0]
-        # --- DEBUG LOGIC END ---
 
         selected_music = st.sidebar.selectbox(
             "Pilih Lagu:",
