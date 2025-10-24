@@ -25,9 +25,7 @@ st.set_page_config(
 # =========================
 # NAMA KELAS & ANIMATION URLs (Fitur Inti)
 # =========================
-# PASTIKAN URUTAN INI SESUAI DENGAN PELATIHAN MODEL .h5
 CLASS_NAMES = ["kucing", "anjing", "manusia"] 
-
 LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
 LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
 LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
@@ -54,11 +52,11 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan agar Stabil)
+# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan + Perbaikan Scroll)
 # =========================
 st.markdown("""
 <style>
-/* 1. Kontainer Utama (Dasar Gelap + Z-Index untuk Konten) */
+/* 1. Kontainer Utama */
 [data-testid="stAppViewContainer"] {
     background-color: #050510; 
     color: #E0E7FF;
@@ -72,17 +70,15 @@ st.markdown("""
     position: absolute;
     inset: 0;
     background: 
-        radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.1) 0%, transparent 40%), /* Biru */
-        radial-gradient(circle at 80% 20%, rgba(255, 102, 196, 0.08) 0%, transparent 45%), /* Pink */
-        radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%); /* Hijau */
+        radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(255, 102, 196, 0.08) 0%, transparent 45%), 
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%);
     
     background-size: 200% 200%;
-    z-index: 1; /* Di bawah konten utama */
+    z-index: 1; 
     pointer-events: none;
     animation: auroraMovement 25s ease-in-out infinite alternate;
 }
-
-/* Keyframes untuk pergerakan aurora */
 @keyframes auroraMovement {
     0% { background-position: 0% 50%; }
     100% { background-position: 100% 50%; }
@@ -98,7 +94,17 @@ main, header, footer {
     backdrop-filter: blur(8px);
     border-right: 1px solid #333;
     z-index: 15;
+    /* Mencegah scroll ganda pada container luar */
+    overflow: hidden !important; 
 }
+
+/* ======= PERBAIKAN SCROLL SIDEBAR ======= */
+[data-testid="stSidebarContent"] {
+    height: 100%; 
+    overflow-y: auto !important; /* INI KUNCI UTAMA PERBAIKAN */
+    padding-bottom: 20px; 
+}
+/* ======================================= */
 
 /* 4. Styling Elemen Lain */
 h1, h2, h3 { text-align: center; }
@@ -140,7 +146,6 @@ if os.path.exists(music_folder):
                 audio_data = f.read()
                 audio_b64 = base64.b64encode(audio_data).decode()
 
-            # HTML audio player dengan kontrol loop
             audio_html = f"""
             <audio controls loop style="width:100%">
                 <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
@@ -194,7 +199,7 @@ elif st.session_state.page == "dashboard":
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    st.sidebar.markdown("<br>", unsafe_allow_html=True) # Jarak agar tombol tidak mepet
+    st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
     # --- Load Model (Fitur Inti) ---
     @st.cache_resource
@@ -219,13 +224,12 @@ elif st.session_state.page == "dashboard":
 
     yolo_model, classifier = load_models()
     
-    # Tombol Kembali ke Halaman Awal (DIPASTIKAN SELALU MUNCUL DI SIDEBAR BAWAH)
+    # Tombol Kembali ke Halaman Awal
     st.sidebar.markdown("---")
     if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home", use_container_width=True):
         reset_to_home_state()
         st.rerun()
     st.sidebar.markdown("<br>", unsafe_allow_html=True)
-
 
     # --- Upload & Proses ---
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
@@ -271,7 +275,6 @@ elif st.session_state.page == "dashboard":
                         class_index = np.argmax(prediction)
                         confidence = np.max(prediction)
                         
-                        # Menggunakan NAMA KELAS
                         predicted_class_name = CLASS_NAMES[class_index] 
                         
                         st.markdown(f"""
