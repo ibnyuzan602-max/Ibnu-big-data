@@ -43,7 +43,7 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: SOLUSI SCROLL + SELECTBOX
+# CSS: PERBAIKAN SELECTBOX SANGAT SPESIFIK
 # =========================
 st.markdown("""
 <style>
@@ -74,45 +74,44 @@ st.markdown("""
 }
 main, header, footer { position: relative; z-index: 10; }
 
-/* 2. Sidebar Style */
+/* 2. Sidebar Style & Scroll FIX */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
     z-index: 15;
-    /* PENTING: Beri tinggi penuh layar dan sembunyikan scroll di kontainer luar */
     height: 100vh !important;
     overflow: hidden !important; 
 }
 [data-testid="stSidebar"] * { color: white !important; }
-
-
-/* === SOLUSI SCROLL SIDEBAR UTAMA === */
-/* KUNCI: Targetkan konten sidebar untuk scroll */
 [data-testid="stSidebarContent"] {
-    /* Memaksa scroll bar vertikal muncul jika konten melebihi area */
     overflow-y: auto !important; 
-    /* Pastikan elemen konten mengisi penuh area yang tersedia (di dalam kontainer 100vh) */
     height: 100%; 
     padding-bottom: 50px; 
 }
-/* =================================== */
 
+/* === SOLUSI VISIBILITAS NAMA LAGU (SELECTBOX PALING SPESIFIK) === */
 
-/* === SOLUSI VISIBILITAS NAMA LAGU (SELECTBOX) === */
-/* Teks yang terlihat di dalam selectbox saat terpilih */
-[data-testid="stSelectbox"] div[data-testid="stBody"] {
-    background-color: #333 !important; 
-    color: white !important; 
+/* 1. Target Teks yang Terpilih di dalam Kotak Selectbox */
+/* Ini menargetkan div yang menampung teks yang dipilih. */
+[data-testid="stSelectbox"] > div:first-child > div:first-child > div:first-child {
+    color: white !important; /* Warna Teks Putih */
+    background-color: #1a1a2e !important; /* Latar Belakang Kotak Gelap */
 }
-/* Teks di dalam input (pastikan nama lagu terlihat) */
-[data-testid="stSelectbox"] input {
-    color: white !important;
+
+/* 2. Target Teks di Dropdown List saat Dibuka */
+/* Ini menargetkan teks di dalam daftar opsi yang muncul. */
+div[role="listbox"] > div {
+    color: black !important; /* Warna Teks Hitam */
+    background-color: white !important; /* Latar Belakang Opsi Putih */
 }
-/* Teks di dropdown list saat dibuka */
-div.st-bb {
-    color: #000 !important; /* Agar kontras dengan latar belakang putih default dropdown list */
+
+/* 3. Target Teks di Dropdown List saat Hover (Opsi Terbaik) */
+/* Ini memastikan teks tetap terlihat saat mouse di atasnya (hover) */
+.st-bb {
+    color: black !important;
 }
+
 /* ==================================================== */
 
 
@@ -125,6 +124,8 @@ h1, h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
 .music-button:hover { transform: scale(1.1); }
 </style>
 """, unsafe_allow_html=True)
+
+# (Sisa kode Python tetap sama)
 
 # =========================
 # SISTEM MUSIK (Fitur Inti)
@@ -170,6 +171,7 @@ if os.path.exists(music_folder):
 else:
     st.sidebar.warning("⚠ Folder 'music/' tidak ditemukan.")
 
+# (Sisa halaman-halaman Anda)
 # =========================
 # HALAMAN 1: WELCOME
 # =========================
