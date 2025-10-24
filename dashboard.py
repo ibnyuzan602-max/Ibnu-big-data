@@ -43,7 +43,7 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: PERBAIKAN SELECTBOX SANGAT SPESIFIK
+# CSS: SOLUSI SCROLL + SELECTBOX EXTREME
 # =========================
 st.markdown("""
 <style>
@@ -90,24 +90,24 @@ main, header, footer { position: relative; z-index: 10; }
     padding-bottom: 50px; 
 }
 
-/* === SOLUSI VISIBILITAS NAMA LAGU (SELECTBOX PALING SPESIFIK) === */
+
+/* === SOLUSI VISIBILITAS NAMA LAGU (EXTREME) === */
 
 /* 1. Target Teks yang Terpilih di dalam Kotak Selectbox */
-/* Ini menargetkan div yang menampung teks yang dipilih. */
-[data-testid="stSelectbox"] > div:first-child > div:first-child > div:first-child {
-    color: white !important; /* Warna Teks Putih */
+/* Kita targetkan elemen input internal Streamlit secara langsung */
+.st-bk input {
+    color: white !important; /* Memaksa warna teks menjadi putih */
     background-color: #1a1a2e !important; /* Latar Belakang Kotak Gelap */
 }
 
 /* 2. Target Teks di Dropdown List saat Dibuka */
 /* Ini menargetkan teks di dalam daftar opsi yang muncul. */
-div[role="listbox"] > div {
-    color: black !important; /* Warna Teks Hitam */
-    background-color: white !important; /* Latar Belakang Opsi Putih */
+div[role="listbox"] div[data-testid="stVirtualList"] div[role="option"] {
+    color: black !important; /* Warna Teks Hitam agar kontras dengan latar default putih */
+    background-color: white !important; 
 }
 
-/* 3. Target Teks di Dropdown List saat Hover (Opsi Terbaik) */
-/* Ini memastikan teks tetap terlihat saat mouse di atasnya (hover) */
+/* 3. Target Teks di Dropdown List saat Hover */
 .st-bb {
     color: black !important;
 }
@@ -125,7 +125,7 @@ h1, h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-# (Sisa kode Python tetap sama)
+# (Sisa kode Python tetap sama persis)
 
 # =========================
 # SISTEM MUSIK (Fitur Inti)
@@ -139,7 +139,6 @@ if os.path.exists(music_folder):
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
         
-        # Inisialisasi/Validasi current_music
         if "current_music" not in st.session_state or st.session_state.current_music not in music_files:
             st.session_state.current_music = music_files[0]
 
@@ -171,7 +170,6 @@ if os.path.exists(music_folder):
 else:
     st.sidebar.warning("⚠ Folder 'music/' tidak ditemukan.")
 
-# (Sisa halaman-halaman Anda)
 # =========================
 # HALAMAN 1: WELCOME
 # =========================
