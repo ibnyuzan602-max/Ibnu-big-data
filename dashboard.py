@@ -52,7 +52,7 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan + Perbaikan Scroll)
+# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan + Perbaikan Scroll Final)
 # =========================
 st.markdown("""
 <style>
@@ -89,20 +89,31 @@ main, header, footer {
     position: relative;
     z-index: 10; 
 }
+
+/* ======= PERBAIKAN SCROLL SIDEBAR FINAL ======= */
+/* Target Container Sidebar Luar */
 [data-testid="stSidebar"] {
     background: rgba(10, 10, 25, 0.85);
     backdrop-filter: blur(8px);
     border-right: 1px solid #333;
     z-index: 15;
-    /* Mencegah scroll ganda pada container luar */
+    /* Streamlit menyetel ini ke 100% tinggi viewport (vh). */
+    /* Kita pastikan overflow tersembunyi di sini, scroll hanya di konten dalamnya. */
     overflow: hidden !important; 
 }
 
-/* ======= PERBAIKAN SCROLL SIDEBAR ======= */
+/* Target Konten Sidebar (Kunci Scroll) */
 [data-testid="stSidebarContent"] {
+    /* Tinggi 100% dari container stSidebar */
     height: 100%; 
-    overflow-y: auto !important; /* INI KUNCI UTAMA PERBAIKAN */
+    /* Memunculkan scroll bar jika konten melebihi tinggi */
+    overflow-y: auto !important; 
     padding-bottom: 20px; 
+}
+
+/* Target Elemen yang sering membatasi scroll (stSidebarNav) */
+[data-testid="stSidebarNav"] {
+    height: auto !important;
 }
 /* ======================================= */
 
