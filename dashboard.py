@@ -23,6 +23,13 @@ st.set_page_config(
 )
 
 # =========================
+# INISIALISASI SESSION STATE (PERBAIKAN ERROR)
+# =========================
+# Memastikan 'page' selalu ada sebelum dibaca oleh kode di bawahnya
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+# =========================
 # NAMA KELAS & FUNGSI UTAMA
 # =========================
 CLASS_NAMES = ["kucing", "anjing", "manusia"] 
@@ -94,14 +101,12 @@ main, header, footer { position: relative; z-index: 10; }
 /* === SOLUSI VISIBILITAS NAMA LAGU (EXTREME) === */
 
 /* 1. Target Teks yang Terpilih di dalam Kotak Selectbox */
-/* Kita targetkan elemen input internal Streamlit secara langsung */
 .st-bk input {
     color: white !important; /* Memaksa warna teks menjadi putih */
     background-color: #1a1a2e !important; /* Latar Belakang Kotak Gelap */
 }
 
 /* 2. Target Teks di Dropdown List saat Dibuka */
-/* Ini menargetkan teks di dalam daftar opsi yang muncul. */
 div[role="listbox"] div[data-testid="stVirtualList"] div[role="option"] {
     color: black !important; /* Warna Teks Hitam agar kontras dengan latar default putih */
     background-color: white !important; 
@@ -124,8 +129,6 @@ h1, h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
 .music-button:hover { transform: scale(1.1); }
 </style>
 """, unsafe_allow_html=True)
-
-# (Sisa kode Python tetap sama persis)
 
 # =========================
 # SISTEM MUSIK (Fitur Inti)
@@ -173,6 +176,7 @@ else:
 # =========================
 # HALAMAN 1: WELCOME
 # =========================
+# Line 176 sekarang
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
