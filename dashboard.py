@@ -23,9 +23,9 @@ st.set_page_config(
 )
 
 # =========================
-# CLASS NAMES & ANIMATION URLs (Fitur Inti)
+# NAMA KELAS & ANIMATION URLs (Fitur Inti)
 # =========================
-# PASTIKAN URUTAN INI SESUAI DENGAN PELATIHAN MODEL .h5 ANDA
+# PASTIKAN URUTAN INI SESUAI DENGAN PELATIHAN MODEL .h5
 CLASS_NAMES = ["kucing", "anjing", "manusia"] 
 
 LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
@@ -54,27 +54,27 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: LATAR BELAKANG AURORA & ELEGANSI (Pembaruan untuk Stabilitas)
+# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan agar Stabil)
 # =========================
 st.markdown("""
 <style>
 /* 1. Kontainer Utama (Dasar Gelap + Z-Index untuk Konten) */
 [data-testid="stAppViewContainer"] {
-    background-color: #050510; /* Warna dasar sangat gelap */
+    background-color: #050510; 
     color: #E0E7FF;
     position: relative;
     overflow: hidden;
 }
 
-/* 2. Elemen Latar Belakang Animasi (Efek Aurora) */
+/* 2. Elemen Latar Belakang Animasi (Efek Aurora Bergerak) */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: absolute;
     inset: 0;
     background: 
-        radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.1) 0%, transparent 40%), 
-        radial-gradient(circle at 80% 20%, rgba(255, 102, 196, 0.08) 0%, transparent 45%), 
-        radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.1) 0%, transparent 40%), /* Biru */
+        radial-gradient(circle at 80% 20%, rgba(255, 102, 196, 0.08) 0%, transparent 45%), /* Pink */
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%); /* Hijau */
     
     background-size: 200% 200%;
     z-index: 1; /* Di bawah konten utama */
@@ -100,7 +100,7 @@ main, header, footer {
     z-index: 15;
 }
 
-/* 4. Styling Elemen Lain (Dari kode Anda sebelumnya) */
+/* 4. Styling Elemen Lain */
 h1, h2, h3 { text-align: center; }
 .lottie-center { display: flex; justify-content: center; align-items: center; margin-top: 30px; }
 .result-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; margin-top: 20px; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.25); }
@@ -140,6 +140,7 @@ if os.path.exists(music_folder):
                 audio_data = f.read()
                 audio_b64 = base64.b64encode(audio_data).decode()
 
+            # HTML audio player dengan kontrol loop
             audio_html = f"""
             <audio controls loop style="width:100%">
                 <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
@@ -193,13 +194,7 @@ elif st.session_state.page == "dashboard":
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    st.sidebar.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
-    st.sidebar.markdown("---")
-    
-    # Tombol Kembali
-    if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home", use_container_width=True):
-        reset_to_home_state()
-        st.rerun()
+    st.sidebar.markdown("<br>", unsafe_allow_html=True) # Jarak agar tombol tidak mepet
 
     # --- Load Model (Fitur Inti) ---
     @st.cache_resource
@@ -223,6 +218,14 @@ elif st.session_state.page == "dashboard":
         return yolo_model, classifier
 
     yolo_model, classifier = load_models()
+    
+    # Tombol Kembali ke Halaman Awal (DIPASTIKAN SELALU MUNCUL DI SIDEBAR BAWAH)
+    st.sidebar.markdown("---")
+    if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home", use_container_width=True):
+        reset_to_home_state()
+        st.rerun()
+    st.sidebar.markdown("<br>", unsafe_allow_html=True)
+
 
     # --- Upload & Proses ---
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
@@ -268,7 +271,8 @@ elif st.session_state.page == "dashboard":
                         class_index = np.argmax(prediction)
                         confidence = np.max(prediction)
                         
-                        predicted_class_name = CLASS_NAMES[class_index] # Menggunakan NAMA KELAS
+                        # Menggunakan NAMA KELAS
+                        predicted_class_name = CLASS_NAMES[class_index] 
                         
                         st.markdown(f"""
                         <div class="result-card">
