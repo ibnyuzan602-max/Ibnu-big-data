@@ -27,15 +27,68 @@ st.set_page_config(
 # =========================
 st.markdown("""
 <style>
+/* =========================
+   BACKGROUND ANIMASI HIDUP
+   ========================= */
 [data-testid="stAppViewContainer"] {
-    background: radial-gradient(circle at 10% 20%, #0b0b17, #1b1b2a 80%);
+    position: relative;
+    background: radial-gradient(circle at 10% 20%, #0b0b17, #141428, #0a0a14);
     color: white;
+    overflow: hidden;
 }
+
+/* Efek partikel halus */
+[data-testid="stAppViewContainer"]::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle at 20% 20%, rgba(0,255,255,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 80% 30%, rgba(255,0,255,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 50% 80%, rgba(0,255,128,0.15) 0%, transparent 70%);
+    animation: move-bg 20s ease-in-out infinite alternate;
+    z-index: 0;
+}
+
+/* Efek partikel bokeh kecil */
+[data-testid="stAppViewContainer"]::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: move-particles 40s linear infinite;
+    z-index: 0;
+}
+
+/* Animasi pergerakan lembut */
+@keyframes move-bg {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-10%, -10%) scale(1.1); }
+}
+@keyframes move-particles {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(25px, 25px) rotate(360deg); }
+}
+
+/* Pastikan semua konten berada di atas animasi */
+.block-container {
+    position: relative;
+    z-index: 5;
+}
+
+/* =========================
+   SIDEBAR & TEKS
+   ========================= */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
     padding-bottom: 80px; 
+    z-index: 10;
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
@@ -68,7 +121,9 @@ h1, h2, h3 {
     margin: 15px auto;
 }
 
-/* Tombol Musik di Kanan Bawah */
+/* =========================
+   TOMBOL MUSIK
+   ========================= */
 .music-button {
     position: fixed;
     bottom: 20px;
@@ -90,8 +145,6 @@ h1, h2, h3 {
 .music-button:hover {
     transform: scale(1.1);
 }
-
-/* Animasi Rotasi Tombol Musik */
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
