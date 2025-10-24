@@ -23,16 +23,15 @@ st.set_page_config(
 )
 
 # =========================
-# NAMA KELAS & ANIMATION URLs (Fitur Inti)
+# NAMA KELAS & FUNGSI UTAMA
 # =========================
+# PASTIKAN URUTAN INI SESUAI DENGAN PELATIHAN MODEL .h5
 CLASS_NAMES = ["kucing", "anjing", "manusia"] 
+
 LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
 LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
 LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
 
-# =========================
-# FUNGSI LOTTIE
-# =========================
 def load_lottie_url(url):
     try:
         r = requests.get(url)
@@ -42,29 +41,21 @@ def load_lottie_url(url):
         return None
     return None
 
-# =========================
-# SISTEM HALAMAN
-# =========================
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
 def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: LATAR BELAKANG AURORA & ELEGANSI (Dioptimalkan + Perbaikan Scroll Final)
+# CSS: AURORA ANIMASI & PERBAIKAN SIDEBAR AMAN
 # =========================
 st.markdown("""
 <style>
-/* 1. Kontainer Utama */
+/* 1. Kontainer Utama (Dasar Gelap + Aurora Animasi Stabil) */
 [data-testid="stAppViewContainer"] {
-    background-color: #050510; 
+    background-color: #050510; /* Warna dasar sangat gelap */
     color: #E0E7FF;
     position: relative;
     overflow: hidden;
 }
-
-/* 2. Elemen Latar Belakang Animasi (Efek Aurora Bergerak) */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: absolute;
@@ -75,7 +66,7 @@ st.markdown("""
         radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%);
     
     background-size: 200% 200%;
-    z-index: 1; 
+    z-index: 1; /* Di bawah konten utama */
     pointer-events: none;
     animation: auroraMovement 25s ease-in-out infinite alternate;
 }
@@ -83,45 +74,27 @@ st.markdown("""
     0% { background-position: 0% 50%; }
     100% { background-position: 100% 50%; }
 }
+/* Pastikan konten di depan latar belakang */
+main, header, footer { position: relative; z-index: 10; }
 
-/* 3. Konten Streamlit dan Sidebar (Pastikan selalu di depan) */
-main, header, footer {
-    position: relative;
-    z-index: 10; 
-}
 
-/* ======= PERBAIKAN SCROLL SIDEBAR FINAL ======= */
-/* Target Container Sidebar Luar */
+/* 2. Sidebar (Dihilangkan padding-bottom yang menyebabkan potongan) */
 [data-testid="stSidebar"] {
-    background: rgba(10, 10, 25, 0.85);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 15, 25, 0.95);
+    backdrop-filter: blur(10px);
     border-right: 1px solid #333;
+    /* padding-bottom: 80px DIHAPUS agar scroll aman */
     z-index: 15;
-    /* Streamlit menyetel ini ke 100% tinggi viewport (vh). */
-    /* Kita pastikan overflow tersembunyi di sini, scroll hanya di konten dalamnya. */
-    overflow: hidden !important; 
 }
+[data-testid="stSidebar"] * { color: white !important; }
 
-/* Target Konten Sidebar (Kunci Scroll) */
-[data-testid="stSidebarContent"] {
-    /* Tinggi 100% dari container stSidebar */
-    height: 100%; 
-    /* Memunculkan scroll bar jika konten melebihi tinggi */
-    overflow-y: auto !important; 
-    padding-bottom: 20px; 
-}
-
-/* Target Elemen yang sering membatasi scroll (stSidebarNav) */
-[data-testid="stSidebarNav"] {
-    height: auto !important;
-}
-/* ======================================= */
-
-/* 4. Styling Elemen Lain */
-h1, h2, h3 { text-align: center; }
+/* 3. Elemen Umum */
+h1, h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
 .lottie-center { display: flex; justify-content: center; align-items: center; margin-top: 30px; }
 .result-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; margin-top: 20px; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.25); }
 .warning-box { background-color: rgba(255, 193, 7, 0.1); border-left: 5px solid #ffc107; color: #ffc107; padding: 10px; border-radius: 8px; text-align: center; width: 90%; margin: 15px auto; }
+
+/* 4. Musik Button (Tidak berubah) */
 .music-button { position: fixed; bottom: 20px; right: 25px; background-color: #1db954; color: white; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; }
 .music-button:hover { transform: scale(1.1); }
 </style>
@@ -131,6 +104,8 @@ h1, h2, h3 { text-align: center; }
 # SISTEM MUSIK (Fitur Inti)
 # =========================
 music_folder = "music"
+
+# Ambil semua file musik mp3 di folder /music
 if os.path.exists(music_folder):
     music_files = [f for f in os.listdir(music_folder) if f.endswith(".mp3")]
 
@@ -138,6 +113,7 @@ if os.path.exists(music_folder):
         st.sidebar.warning("⚠ Tidak ada file musik di folder 'music/'.")
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
+
         if "current_music" not in st.session_state:
             st.session_state.current_music = music_files[0]
 
@@ -152,6 +128,7 @@ if os.path.exists(music_folder):
             st.rerun()
 
         music_path = os.path.join(music_folder, st.session_state.current_music)
+
         try:
             with open(music_path, "rb") as f:
                 audio_data = f.read()
@@ -166,6 +143,7 @@ if os.path.exists(music_folder):
             st.sidebar.markdown(audio_html, unsafe_allow_html=True)
         except Exception as e:
             st.sidebar.error(f"Gagal memuat file musik: {e}")
+
 else:
     st.sidebar.warning("⚠ Folder 'music/' tidak ditemukan.")
 
@@ -194,7 +172,7 @@ if st.session_state.page == "home":
             st.rerun()
 
 # =========================
-# HALAMAN 2: DASHBOARD (Fitur Inti: Model AI)
+# HALAMAN 2: DASHBOARD
 # =========================
 elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
@@ -210,9 +188,8 @@ elif st.session_state.page == "dashboard":
     mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    st.sidebar.markdown("<br>", unsafe_allow_html=True)
+    st.sidebar.markdown("<br>", unsafe_allow_html=True) # Jarak aman
 
-    # --- Load Model (Fitur Inti) ---
     @st.cache_resource
     def load_models():
         yolo_model, classifier = None, None
@@ -234,16 +211,15 @@ elif st.session_state.page == "dashboard":
         return yolo_model, classifier
 
     yolo_model, classifier = load_models()
-    
-    # Tombol Kembali ke Halaman Awal
+
+    uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+
+    # Tombol Kembali (Diposisikan di akhir sidebar, dijamin terlihat)
     st.sidebar.markdown("---")
-    if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home", use_container_width=True):
+    if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home_fixed", use_container_width=True):
         reset_to_home_state()
         st.rerun()
-    st.sidebar.markdown("<br>", unsafe_allow_html=True)
-
-    # --- Upload & Proses ---
-    uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
+    st.sidebar.markdown("<br>", unsafe_allow_html=True) # Jarak aman
 
     if uploaded_file:
         try:
@@ -286,7 +262,8 @@ elif st.session_state.page == "dashboard":
                         class_index = np.argmax(prediction)
                         confidence = np.max(prediction)
                         
-                        predicted_class_name = CLASS_NAMES[class_index] 
+                        # Pastikan menggunakan nama kelas yang benar
+                        predicted_class_name = CLASS_NAMES[class_index] if class_index < len(CLASS_NAMES) else f"Kelas tidak dikenal ({class_index})"
                         
                         st.markdown(f"""
                         <div class="result-card">
@@ -304,8 +281,7 @@ elif st.session_state.page == "dashboard":
                     st.markdown("""
                     <div class="result-card">
                         <h3>💬 Insight Otomatis</h3>
-                        <p>Fitur ini masih dalam tahap pengembangan, dirancang untuk memberikan analisis mendalam.</p>
-                        <p>Saat ini menampilkan prediksi dari kedua model yang tersedia.</p>
+                        <p>Fitur ini masih dalam tahap pengembangan.</p>
                     </div>
                     """, unsafe_allow_html=True)
 
