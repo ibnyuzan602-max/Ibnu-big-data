@@ -43,19 +43,17 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# CSS: AURORA ANIMASI & PERBAIKAN SIDEBAR PALING MINIMALIS
+# CSS: PERBAIKAN DROPDOWN VISIBILITAS + AURORA ANIMASI
 # =========================
 st.markdown("""
 <style>
-/* 1. Kontainer Utama (Latar Belakang Disederhanakan untuk Debug) */
+/* 1. Kontainer Utama (Latar Belakang & Aurora) */
 [data-testid="stAppViewContainer"] {
-    /* Kembali ke latar belakang solid gelap untuk menghindari bug tata letak */
     background-color: #050510; 
     color: #E0E7FF;
     position: relative;
     overflow: hidden;
 }
-/* Tambahkan kembali efek Aurora dengan aman di elemen pseudonya */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: absolute;
@@ -76,31 +74,43 @@ st.markdown("""
 }
 main, header, footer { position: relative; z-index: 10; }
 
-/* 2. Sidebar Style */
+/* 2. Sidebar Style & Scroll */
 [data-testid="stSidebar"] {
     background: rgba(15, 15, 25, 0.95);
     backdrop-filter: blur(10px);
     border-right: 1px solid #333;
     z-index: 15;
-    /* TIDAK ADA OVERFLOW ATAU HEIGHT DI SINI */
 }
 [data-testid="stSidebar"] * { color: white !important; }
 
-
-/* ======= PERBAIKAN SCROLL SIDEBAR PALING MINIMALIS (Fokus) ======= */
-/* KUNCI: Targetkan konten sidebar untuk scroll */
+/* KUNCI PERBAIKAN SCROLL */
 [data-testid="stSidebarContent"] {
-    /* Memaksa scroll bar vertikal muncul jika konten melebihi area */
     overflow-y: auto !important; 
-    /* Pastikan elemen konten mengisi penuh area yang tersedia */
-    height: 100vh; 
-    /* Margin bawah untuk memberi ruang pada tombol */
     padding-bottom: 50px; 
 }
-/* ======================================= */
 
 
-/* 3. Elemen Umum */
+/* === PERBAIKAN VISIBILITAS SELECTBOX (NAMA LAGU) === */
+[data-testid="stSelectbox"] div[data-testid="stBody"] div[data-testid="stBody"] {
+    /* Latar belakang input Selectbox */
+    background-color: #333 !important; 
+    /* Teks di dalam input Selectbox (nama lagu yang terpilih) */
+    color: white !important; 
+}
+
+/* Jika ini masih gagal, coba targetkan lebih dalam untuk elemen teks */
+[data-testid="stSelectbox"] input {
+    color: white !important;
+}
+
+/* Warna teks di dropdown list saat dibuka */
+.st-bb {
+    color: #000; /* Ganti warna di daftar dropdown menjadi hitam (kontras dengan latar putih default) */
+}
+/* ==================================================== */
+
+
+/* 4. Elemen Umum */
 h1, h2, h3 { text-align: center; font-family: 'Poppins', sans-serif; }
 .lottie-center { display: flex; justify-content: center; align-items: center; margin-top: 30px; }
 .result-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; margin-top: 20px; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.25); }
@@ -121,8 +131,11 @@ if os.path.exists(music_folder):
         st.sidebar.warning("⚠ Tidak ada file musik di folder 'music/'.")
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
-        if "current_music" not in st.session_state:
+        
+        # --- DEBUG LOGIC START ---
+        if "current_music" not in st.session_state or st.session_state.current_music not in music_files:
             st.session_state.current_music = music_files[0]
+        # --- DEBUG LOGIC END ---
 
         selected_music = st.sidebar.selectbox(
             "Pilih Lagu:",
