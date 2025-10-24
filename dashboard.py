@@ -13,6 +13,12 @@ import base64
 from streamlit_lottie import st_lottie
 
 # =========================
+# INISIALISASI SESSION STATE (POSISI TERBAIK & TERAMAN)
+# =========================
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
+# =========================
 # KONFIGURASI DASAR
 # =========================
 st.set_page_config(
@@ -21,13 +27,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# =========================
-# INISIALISASI SESSION STATE (PERBAIKAN ERROR)
-# =========================
-# Memastikan 'page' selalu ada sebelum dibaca oleh kode di bawahnya
-if "page" not in st.session_state:
-    st.session_state.page = "home"
 
 # =========================
 # NAMA KELAS & FUNGSI UTAMA
@@ -142,6 +141,7 @@ if os.path.exists(music_folder):
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
         
+        # Validasi current_music
         if "current_music" not in st.session_state or st.session_state.current_music not in music_files:
             st.session_state.current_music = music_files[0]
 
@@ -176,7 +176,6 @@ else:
 # =========================
 # HALAMAN 1: WELCOME
 # =========================
-# Line 176 sekarang
 if st.session_state.page == "home":
     st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
