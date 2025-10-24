@@ -13,9 +13,10 @@ import base64
 from streamlit_lottie import st_lottie
 
 # =========================
-# INISIALISASI SESSION STATE (POSISI TERBAIK & TERAMAN)
+# INISIALISASI SESSION STATE PALING AMAN (MENGHINDARI ATTRIBUTE ERROR)
 # =========================
-if "page" not in st.session_state:
+# Memastikan 'page' selalu ada, menggunakan .get() untuk menghindari error saat pertama kali diakses.
+if st.session_state.get("page") is None:
     st.session_state.page = "home"
 
 # =========================
@@ -142,7 +143,8 @@ if os.path.exists(music_folder):
         st.sidebar.markdown("#### 🎧 Player Musik")
         
         # Validasi current_music
-        if "current_music" not in st.session_state or st.session_state.current_music not in music_files:
+        # Perhatikan: Di sini kita menggunakan .get() agar aman jika terjadi error di tempat lain
+        if st.session_state.get("current_music") is None or st.session_state.current_music not in music_files:
             st.session_state.current_music = music_files[0]
 
         selected_music = st.sidebar.selectbox(
