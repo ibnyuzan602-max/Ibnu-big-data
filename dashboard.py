@@ -8,11 +8,12 @@ import requests
 import time
 import io
 import os
+import json
 import base64
 from streamlit_lottie import st_lottie
 
 # =========================
-# KONFIGURASI HALAMAN
+# KONFIGURASI DASAR
 # =========================
 st.set_page_config(
     page_title="AI Vision Pro",
@@ -22,23 +23,29 @@ st.set_page_config(
 )
 
 # =========================
-# FUNGSI LOTTIE ANIMASI
+# CLASS NAMES & ANIMATION URLs (Fitur Inti)
 # =========================
-def load_lottie_url(url: str):
+# PASTIKAN URUTAN INI SESUAI DENGAN PELATIHAN MODEL .h5 ANDA
+CLASS_NAMES = ["kucing", "anjing", "manusia"] 
+
+LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
+LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
+LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
+
+# =========================
+# FUNGSI LOTTIE
+# =========================
+def load_lottie_url(url):
     try:
         r = requests.get(url)
         if r.status_code == 200:
             return r.json()
-    except Exception:
+    except:
         return None
     return None
 
-LOTTIE_WELCOME = "https://assets10.lottiefiles.com/packages/lf20_pwohahvd.json"
-LOTTIE_TRANSITION = "https://assets2.lottiefiles.com/packages/lf20_touohxv0.json"
-LOTTIE_DASHBOARD = "https://assets10.lottiefiles.com/packages/lf20_t24tpvcu.json"
-
 # =========================
-# PAGE STATE
+# SISTEM HALAMAN
 # =========================
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -47,120 +54,66 @@ def reset_to_home_state():
     st.session_state.page = "home"
 
 # =========================
-# BACKGROUND AURORA + PARTIKEL
+# CSS: LATAR BELAKANG AURORA & ELEGANSI (Pembaruan untuk Stabilitas)
 # =========================
-st.markdown(
-    """
+st.markdown("""
 <style>
+/* 1. Kontainer Utama (Dasar Gelap + Z-Index untuk Konten) */
 [data-testid="stAppViewContainer"] {
-    background: linear-gradient(120deg, #071020 0%, #081427 30%, #0b0b17 60%, #05040a 100%);
-    background-size: 300% 300%;
-    animation: auroraMove 18s ease infinite;
-    color: #e6f7ff;
+    background-color: #050510; /* Warna dasar sangat gelap */
+    color: #E0E7FF;
     position: relative;
     overflow: hidden;
 }
-@keyframes auroraMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+
+/* 2. Elemen Latar Belakang Animasi (Efek Aurora) */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(0,200,255,0.06) 0%, transparent 25%),
-      radial-gradient(circle at 80% 30%, rgba(123,61,255,0.045) 0%, transparent 30%),
-      radial-gradient(circle at 60% 75%, rgba(0,255,150,0.035) 0%, transparent 40%);
-    z-index: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.1) 0%, transparent 40%), 
+        radial-gradient(circle at 80% 20%, rgba(255, 102, 196, 0.08) 0%, transparent 45%), 
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 150, 0.05) 0%, transparent 50%);
+    
+    background-size: 200% 200%;
+    z-index: 1; /* Di bawah konten utama */
     pointer-events: none;
-    transform-origin: center;
-    animation: subtleShift 24s ease-in-out infinite;
+    animation: auroraMovement 25s ease-in-out infinite alternate;
 }
-@keyframes subtleShift {
-    0% { transform: translateY(0px) scale(1); }
-    50% { transform: translateY(-12px) scale(1.03); }
-    100% { transform: translateY(0px) scale(1); }
+
+/* Keyframes untuk pergerakan aurora */
+@keyframes auroraMovement {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
 }
-[data-testid="stAppViewContainer"]::after {
-    content:"";
-    position:absolute;
-    inset:0;
-    background-image:
-      radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 80px 80px, 120px 120px;
-    opacity: 0.6;
-    mix-blend-mode: overlay;
-    z-index: 0;
-    animation: rotateTexture 60s linear infinite;
-}
-@keyframes rotateTexture {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-main, header, footer, section, div {
+
+/* 3. Konten Streamlit dan Sidebar (Pastikan selalu di depan) */
+main, header, footer {
     position: relative;
-    z-index: 5;
+    z-index: 10; 
 }
 [data-testid="stSidebar"] {
-    background: rgba(6,8,12,0.9);
-    backdrop-filter: blur(6px);
-    border-right: 1px solid rgba(255,255,255,0.03);
-    z-index: 10;
+    background: rgba(10, 10, 25, 0.85);
+    backdrop-filter: blur(8px);
+    border-right: 1px solid #333;
+    z-index: 15;
 }
-[data-testid="stSidebar"] * { color: #e6f7ff !important; }
-.lottie-center {
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    margin-top:18px;
-    z-index:5;
-}
-.result-card {
-    background: rgba(255,255,255,0.03);
-    border-radius: 12px;
-    padding: 14px;
-    box-shadow: 0 6px 30px rgba(0,0,0,0.5);
-    z-index:5;
-}
-.music-button {
-    position: fixed;
-    bottom: 18px;
-    right: 18px;
-    width:56px;
-    height:56px;
-    border-radius:50%;
-    background: linear-gradient(135deg,#00e0ff,#7b61ff);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-    cursor:pointer;
-    z-index:99999;
-    box-shadow: 0 10px 30px rgba(123,61,255,0.12);
-    border: none;
-}
-.music-button:hover { transform: scale(1.05); }
-.sidebar-bottom {
-    position: sticky;
-    bottom: 12px;
-    width: calc(100% - 32px);
-    margin: 8px 16px;
-    z-index: 12;
-}
+
+/* 4. Styling Elemen Lain (Dari kode Anda sebelumnya) */
+h1, h2, h3 { text-align: center; }
+.lottie-center { display: flex; justify-content: center; align-items: center; margin-top: 30px; }
+.result-card { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px; margin-top: 20px; text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,0.25); }
+.warning-box { background-color: rgba(255, 193, 7, 0.1); border-left: 5px solid #ffc107; color: #ffc107; padding: 10px; border-radius: 8px; text-align: center; width: 90%; margin: 15px auto; }
+.music-button { position: fixed; bottom: 20px; right: 25px; background-color: #1db954; color: white; border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 26px; cursor: pointer; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; }
+.music-button:hover { transform: scale(1.1); }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 # =========================
-# FITUR MUSIK (PILIH LAGU)
+# SISTEM MUSIK (Fitur Inti)
 # =========================
 music_folder = "music"
-audio_b64 = None
-
 if os.path.exists(music_folder):
     music_files = [f for f in os.listdir(music_folder) if f.endswith(".mp3")]
 
@@ -168,7 +121,6 @@ if os.path.exists(music_folder):
         st.sidebar.warning("⚠ Tidak ada file musik di folder 'music/'.")
     else:
         st.sidebar.markdown("#### 🎧 Player Musik")
-
         if "current_music" not in st.session_state:
             st.session_state.current_music = music_files[0]
 
@@ -183,111 +135,96 @@ if os.path.exists(music_folder):
             st.rerun()
 
         music_path = os.path.join(music_folder, st.session_state.current_music)
-        with open(music_path, "rb") as f:
-            audio_data = f.read()
-            audio_b64 = base64.b64encode(audio_data).decode()
+        try:
+            with open(music_path, "rb") as f:
+                audio_data = f.read()
+                audio_b64 = base64.b64encode(audio_data).decode()
 
-        # Player manual di sidebar
-        audio_html = f"""
-        <audio id="bgMusic" controls loop style="width:100%">
-            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-            Browser Anda tidak mendukung audio.
-        </audio>
-        """
-        st.sidebar.markdown(audio_html, unsafe_allow_html=True)
+            audio_html = f"""
+            <audio controls loop style="width:100%">
+                <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+                Browser Anda tidak mendukung audio.
+            </audio>
+            """
+            st.sidebar.markdown(audio_html, unsafe_allow_html=True)
+        except Exception as e:
+            st.sidebar.error(f"Gagal memuat file musik: {e}")
 else:
     st.sidebar.warning("⚠ Folder 'music/' tidak ditemukan.")
 
-# Tombol musik melayang (pause/play)
-st.markdown(
-    """
-    <script>
-    function toggleFloatingMusic(){
-        const m=document.getElementById('bgMusic');
-        if(!m)return;
-        if(m.paused){m.play();}else{m.pause();}
-    }
-    </script>
-    <button class="music-button" onclick="toggleFloatingMusic()" title="Play / Pause Musik">🎵</button>
-    """,
-    unsafe_allow_html=True,
-)
-
 # =========================
-# HALAMAN HOME
+# HALAMAN 1: WELCOME
 # =========================
 if st.session_state.page == "home":
-    st.markdown("<h1 style='text-align:center;margin-top:6px;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;color:#cfeffd;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
-
+    st.markdown("<h1 style='text-align:center;'>🤖 Selamat Datang di AI Vision Pro</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;'>Sistem Cerdas untuk Deteksi Objek dan Klasifikasi Gambar</p>", unsafe_allow_html=True)
+    
     lottie = load_lottie_url(LOTTIE_WELCOME)
     if lottie:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
-        st_lottie(lottie, height=300, key="welcome_lottie")
+        st_lottie(lottie, height=300, key="welcome_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🚀 Masuk ke Website", use_container_width=True):
-            trans = load_lottie_url(LOTTIE_TRANSITION)
-            if trans:
-                st_lottie(trans, height=220, key="trans_lottie")
-                time.sleep(1.2)
             st.session_state.page = "dashboard"
+            with st.spinner("🔄 Memuat halaman..."):
+                anim = load_lottie_url(LOTTIE_TRANSITION)
+                if anim:
+                    st_lottie(anim, height=200, key="transition_anim")
+                time.sleep(1.5)
             st.rerun()
 
 # =========================
-# HALAMAN DASHBOARD
+# HALAMAN 2: DASHBOARD (Fitur Inti: Model AI)
 # =========================
 elif st.session_state.page == "dashboard":
     st.title("🤖 AI Vision Pro Dashboard")
-    st.markdown("### Sistem Deteksi dan Klasifikasi Gambar")
+    st.markdown("### Sistem Deteksi dan Klasifikasi Gambar Cerdas")
 
-    lottie_d = load_lottie_url(LOTTIE_DASHBOARD)
-    if lottie_d:
+    lottie_ai = load_lottie_url(LOTTIE_DASHBOARD)
+    if lottie_ai:
         st.markdown("<div class='lottie-center'>", unsafe_allow_html=True)
-        st_lottie(lottie_d, height=220, key="dashboard_lottie")
+        st_lottie(lottie_ai, height=250, key="ai_anim")
         st.markdown("</div>", unsafe_allow_html=True)
 
     st.sidebar.header("🧠 Mode AI")
-    mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar"])
+    mode = st.sidebar.radio("Pilih Mode:", ["Deteksi Objek (YOLO)", "Klasifikasi Gambar", "AI Insight"])
     st.sidebar.markdown("---")
     st.sidebar.info("💡 Unggah gambar, lalu biarkan AI menganalisis secara otomatis.")
-    st.sidebar.markdown("<br>", unsafe_allow_html=True)
-
-    # Tombol kembali
-    st.sidebar.markdown('<div class="sidebar-bottom">', unsafe_allow_html=True)
-    if st.sidebar.button("⬅ Kembali ke Halaman Awal", use_container_width=True):
+    st.sidebar.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    st.sidebar.markdown("---")
+    
+    # Tombol Kembali
+    if st.sidebar.button("⬅ Kembali ke Halaman Awal", key="back_to_home", use_container_width=True):
         reset_to_home_state()
         st.rerun()
-    st.sidebar.markdown('</div>', unsafe_allow_html=True)
 
-    # =========================
-    # LOAD MODEL
-    # =========================
+    # --- Load Model (Fitur Inti) ---
     @st.cache_resource
     def load_models():
-        yolo_m = None
-        clf = None
-        try:
-            yolo_path = os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt")
-            if os.path.exists(yolo_path):
-                yolo_m = YOLO(yolo_path)
-        except Exception as e:
-            st.warning(f"⚠ Gagal memuat YOLO: {e}")
-        try:
-            cls_path = os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5")
-            if os.path.exists(cls_path):
-                clf = tf.keras.models.load_model(cls_path)
-        except Exception as e:
-            st.warning(f"⚠ Gagal memuat classifier: {e}")
-        return yolo_m, clf
+        yolo_model, classifier = None, None
+        
+        # Cek dan Muat YOLO
+        yolo_path = os.path.join("model", "Ibnu Hawari Yuzan_Laporan 4.pt")
+        if os.path.exists(yolo_path):
+            try: yolo_model = YOLO(yolo_path)
+            except Exception as e: st.warning(f"⚠ Gagal memuat YOLO: {e}")
+        else: st.warning("⚠ Model YOLO tidak ditemukan di path: model/Ibnu Hawari Yuzan_Laporan 4.pt")
+
+        # Cek dan Muat Classifier
+        cls_path = os.path.join("model", "Ibnu Hawari Yuzan_Laporan 2.h5")
+        if os.path.exists(cls_path):
+            try: classifier = tf.keras.models.load_model(cls_path)
+            except Exception as e: st.warning(f"⚠ Gagal memuat Classifier: {e}")
+        else: st.warning("⚠ Model Classifier tidak ditemukan di path: model/Ibnu Hawari Yuzan_Laporan 2.h5")
+            
+        return yolo_model, classifier
 
     yolo_model, classifier = load_models()
 
-    # =========================
-    # UPLOAD & PROSES
-    # =========================
+    # --- Upload & Proses ---
     uploaded_file = st.file_uploader("📤 Unggah Gambar (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"])
 
     if uploaded_file:
@@ -299,39 +236,60 @@ elif st.session_state.page == "dashboard":
             img = None
 
         if img is not None:
-            with st.spinner("🤖 AI sedang menganalisis gambar..."):
-                time.sleep(1.2)
-
-            if mode == "Deteksi Objek (YOLO)":
-                st.info("🚀 Menjalankan deteksi objek...")
-                if yolo_model is not None:
-                    img_np = np.array(img)
-                    results = yolo_model.predict(source=img_np)
-                    result_img = results[0].plot()
-                    st.image(result_img, caption="🎯 Hasil Deteksi", use_column_width=True)
-                    buf = io.BytesIO()
-                    Image.fromarray(result_img).save(buf, format="PNG")
-                    buf.seek(0)
-                    st.download_button("📥 Download Hasil Deteksi", data=buf, file_name="hasil_deteksi_yolo.png", mime="image/png")
-                else:
-                    st.warning("Model YOLO tidak ditemukan.")
+            if yolo_model is None and classifier is None:
+                st.markdown("<div class='warning-box'>❌ Semua model AI gagal dimuat.</div>", unsafe_allow_html=True)
             else:
-                st.info("🧠 Menjalankan klasifikasi gambar...")
-                if classifier is not None:
-                    img_resized = img.resize((128,128))
-                    arr = image.img_to_array(img_resized)
-                    arr = np.expand_dims(arr, axis=0) / 255.0
-                    pred = classifier.predict(arr)
-                    class_idx = int(np.argmax(pred, axis=1)[0])
-                    confidence = float(np.max(pred))
-                    st.markdown(f"""
+                with st.spinner("🤖 AI sedang menganalisis gambar..."):
+                    time.sleep(1.5)
+
+                # Deteksi Objek (YOLO)
+                if mode == "Deteksi Objek (YOLO)":
+                    if yolo_model:
+                        st.info("🚀 Menjalankan deteksi objek...")
+                        img_cv2 = np.array(img)
+                        results = yolo_model.predict(source=img_cv2)
+                        result_img = results[0].plot()
+                        st.image(result_img, caption="🎯 Hasil Deteksi", use_column_width=True)
+                        img_bytes = io.BytesIO()
+                        Image.fromarray(result_img).save(img_bytes, format="PNG")
+                        img_bytes.seek(0)
+                        st.download_button("📥 Download Hasil Deteksi", data=img_bytes, file_name="hasil_deteksi_yolo.png", mime="image/png")
+                    else:
+                        st.warning("Model YOLO tidak tersedia.")
+
+                # Klasifikasi Gambar
+                elif mode == "Klasifikasi Gambar":
+                    if classifier:
+                        st.info("🧠 Menjalankan klasifikasi gambar...")
+                        img_resized = img.resize((128, 128))
+                        img_array = image.img_to_array(img_resized)
+                        img_array = np.expand_dims(img_array, axis=0) / 255.0
+                        prediction = classifier.predict(img_array)
+                        class_index = np.argmax(prediction)
+                        confidence = np.max(prediction)
+                        
+                        predicted_class_name = CLASS_NAMES[class_index] # Menggunakan NAMA KELAS
+                        
+                        st.markdown(f"""
+                        <div class="result-card">
+                            <h3>🧾 Hasil Prediksi</h3>
+                            <p><b>Kelas:</b> **{predicted_class_name.upper()}**</p>
+                            <p><b>Akurasi:</b> {confidence:.2%}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.warning("Model Classifier tidak tersedia.")
+
+                # AI Insight
+                elif mode == "AI Insight":
+                    st.info("🔍 Mode Insight Aktif")
+                    st.markdown("""
                     <div class="result-card">
-                        <h3>🧾 Hasil Prediksi</h3>
-                        <p><b>Kelas:</b> {class_idx}</p>
-                        <p><b>Akurasi:</b> {confidence:.2%}</p>
+                        <h3>💬 Insight Otomatis</h3>
+                        <p>Fitur ini masih dalam tahap pengembangan, dirancang untuk memberikan analisis mendalam.</p>
+                        <p>Saat ini menampilkan prediksi dari kedua model yang tersedia.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                else:
-                    st.warning("Model classifier tidak ditemukan.")
-    else:
-        st.markdown("<div class='result-card'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
+
+    elif uploaded_file is None:
+        st.markdown("<div class='warning-box'>📂 Silakan unggah gambar terlebih dahulu.</div>", unsafe_allow_html=True)
